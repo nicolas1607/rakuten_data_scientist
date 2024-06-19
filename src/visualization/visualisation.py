@@ -24,7 +24,7 @@ def data_visualisation(fusion):
     plt.xlabel('prdtypecode')
     plt.ylabel('Nombre d\'occurrences')
     plt.title('Répartition des valeurs de prdtypecode')
-    plt.savefig("reports/figures/historamme.png", bbox_inches='tight')
+    plt.savefig("reports/figures/histogramme.png", bbox_inches='tight')
 
     # Nuage de point : productid et prdtypecode
     sns.relplot(x=fusion.productid, y=fusion.prdtypecode)

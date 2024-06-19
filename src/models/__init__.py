@@ -1,14 +1,19 @@
-import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from preprocessing import fusion_description_designation, re_echantillonage
 
+# Pre-processing
+X, y = fusion_description_designation()
+re_echantillonage(X,y)
 
-# Importer les fichiers CSV
-X = pd.read_csv('data/X_train.csv', index_col=0)
-y = pd.read_csv('data/Y_train.csv', index_col=0)
+# Vérifier la présence de doublon dans les images
+# image_folder1 = r'../../data/images/image_test'
+# image_folder2 = r'../../data/images/image_train'
 
-#Répartition en données d'entrainement et en données de test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=66)
+# df1 = pd.DataFrame({'image_exists': []})
+# df1['image_exists'] = df1.apply(lambda row: check_image_exists(row['imageid'],row['productid'], image_folder1), axis=1)
 
-#print(X_train.head())
+# df2 = pd.DataFrame({'image_exists': []})
+# df2['image_exists'] = df2.apply(lambda row: check_image_exists(row['imageid'],row['productid'], image_folder2), axis=1)
 
+# print(df1['image_exists'].value_counts())
+# print(df2['image_exists'].value_counts())

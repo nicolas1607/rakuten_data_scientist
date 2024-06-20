@@ -17,6 +17,7 @@ def data_visualisation(fusion):
     plt.savefig("reports/figures/histogramme_avec_estimation_densite.png", bbox_inches='tight')
     
     # Histogramme : prdtypecode
+
     distribution = fusion['prdtypecode'].value_counts()
     distribution_df = distribution.reset_index()
     distribution_df.columns = ['prdtypecode', 'count']

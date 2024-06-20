@@ -15,14 +15,17 @@ Changement à prendre en compte :
 import os
 import re
 import pandas as pd
-from language_labels import language_labels
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
-from sklearn.model_selection import train_test_split
+from nltk.stem.snowball import FrenchStemmer
+from language_labels import language_labels
 from langdetect import detect, lang_detect_exception, DetectorFactory
 from collections import Counter
-from nltk.stem.snowball import FrenchStemmer
 from deep_translator import GoogleTranslator
+from wordcloud import WordCloud
 
 DetectorFactory.seed = 0
 
@@ -124,6 +127,15 @@ def word_occurence_by_prdtypecode(X, y):
     df_result = pd.DataFrame(compteurs_par_classe).fillna(0).astype(int)
     return df_result
 
+def nuage_de_mots(df_result):
+    for classe in df_result.columns:
+        wordcloud = WordCloud(width=800, height=400).generate_from_frequencies(df_result[classe])
+        plt.figure(figsize=(10, 5))
+        plt.imshow(wordcloud, interpolation='bilinear')
+        plt.axis('off')
+        plt.title(f'Nuage de mots pour la classe {classe}')
+        plt.savefig(f"reports/figures/nuage_de_mot/{classe}.png", bbox_inches='tight')
+
 def pre_processing():
     print("Fusion des colonnes description et designation\n")
     X, y = fusion_description_designation()
@@ -142,6 +154,10 @@ def pre_processing():
 
     print("Création du DataFrame (nombre d'occurence des mots en fonction du prdtypecode)\n")
     df_result = word_occurence_by_prdtypecode(X, y)
+
+    print("Nuage de mots pour les 27 catégories\n")
+    if len(os.listdir('reports/figures/nuage_de_mot')) == 0:
+        nuage_de_mots(df_result)
 
     print("Ré-échantillonnage du jeu de donnée\n")
     X_train, X_test, y_train, y_test = re_echantillonage(X,y)

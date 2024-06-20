@@ -26,6 +26,7 @@ from langdetect import detect, lang_detect_exception, DetectorFactory
 from collections import Counter
 from deep_translator import GoogleTranslator
 from wordcloud import WordCloud
+from PIL import Image 
 
 DetectorFactory.seed = 0
 
@@ -137,6 +138,10 @@ def nuage_de_mots(df_result):
         plt.savefig(f"reports/figures/nuage_de_mot/{classe}.png", bbox_inches='tight')
 
 def pre_processing():
+
+    # Vérification des images
+    pre_processing_image()
+
     print("Fusion des colonnes description et designation\n")
     X, y = fusion_description_designation()
 
@@ -161,3 +166,16 @@ def pre_processing():
     X_train, X_test, y_train, y_test = re_echantillonage(X,y)
 
     return X_train, X_test, y_train, y_test
+
+
+def pre_processing_image():
+    for filename in os.listdir("data/images/image_train"):
+        image = Image.open("data/images/image_train/"+filename)
+        if image.mode != "RGB":
+            print("L'image {filename} n'est pas en mode RGB")
+        if image.size != (500, 500):
+            print("L'image {filename} n'est pas en 500x500 pixels")
+        if image.format != "JPEG":
+            print("L'image {filename} n'est pas au format JPEG")
+        image.close()
+    print("Toutes les images sont en mode RGB, en 500x500 pixels et au format JPEG\n")

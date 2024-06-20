@@ -1,27 +1,27 @@
-import pandas as pd
-from preprocessing import fusion_description_designation, re_echantillonage
-from collections import Counter
 import re
+import pandas as pd
+from preprocessing import *
+from collections import Counter
+
 # Pre-processing
+print("Fusion des colonnes description et designation :\n")
 X, y = fusion_description_designation()
-re_echantillonage(X,y)
 
-# Vérifier la présence de doublon dans les images
-# image_folder1 = r'../../data/images/image_test'
-# image_folder2 = r'../../data/images/image_train'
+print("Analyse des langues dans la colonne descriptif :\n")
+df_lang = traitement_lang(X)
 
-# df1 = pd.DataFrame({'image_exists': []})
-# df1['image_exists'] = df1.apply(lambda row: check_image_exists(row['imageid'],row['productid'], image_folder1), axis=1)
+print("Ré-échantillonnage du jeu de donnée :\n")
+X_train, X_test, y_train, y_test = re_echantillonage(X,y)
 
-# df2 = pd.DataFrame({'image_exists': []})
-# df2['image_exists'] = df2.apply(lambda row: check_image_exists(row['imageid'],row['productid'], image_folder2), axis=1)
+print("Nettoyage de la colonne descriptif:\n")
+X['descriptif'] = X.apply(lambda row: clean_column_descriptif(row['descriptif']), axis=1)
+X.to_csv('data/X_preprocessed.csv')
 
-# print(df1['image_exists'].value_counts())
-# print(df2['image_exists'].value_counts())
+print("Création du DataFrame (nombre d'occurence des mots en fonction du prdtypecode) :\n")
 yy = pd.DataFrame()
 yy['prdtypecode']=y['prdtypecode']
 yy['descriptif'] = X['descriptif']
-print(yy)
+
 def nettoyer_et_separer(description):
     description = description.lower()  # convertir en minuscules
     mots = re.findall(r'\b\w+\b', description)  # extraire les mots

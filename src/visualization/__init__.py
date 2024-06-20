@@ -19,6 +19,3 @@ fusion = pd.merge(X_train, Y_train, left_index=True, right_index=True)
 
 # Data visualisation
 # data_visualisation(fusion)
-
-# Pre-processing
-pre_processing(fusion)

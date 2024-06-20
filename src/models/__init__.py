@@ -1,9 +1,13 @@
 import pandas as pd
-from preprocessing import fusion_description_designation, re_echantillonage
+from preprocessing import *
 
 # Pre-processing
 X, y = fusion_description_designation()
 re_echantillonage(X,y)
+X['descriptif'] = X.apply(lambda row: clean_column_descriptif(row['descriptif']), axis=1)
+
+# Créer un fichier CSV à partir de X
+X.to_csv('data/X_preprocessed.csv')
 
 # Vérifier la présence de doublon dans les images
 # image_folder1 = r'../../data/images/image_test'

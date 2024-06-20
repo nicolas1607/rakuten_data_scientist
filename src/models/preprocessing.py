@@ -14,15 +14,22 @@ Changement à prendre en compte :
 
 import os
 import re
-import numpy as np
 import pandas as pd
+import language_labels
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
-from nltk.stem.snowball import FrenchStemmer
 from sklearn.model_selection import train_test_split
 from langdetect import detect, lang_detect_exception, DetectorFactory
+from collections import Counter
+from nltk.stem.snowball import FrenchStemmer
+from deep_translator import GoogleTranslator
 
 DetectorFactory.seed = 0
+
+def check_image_exists(imageid, productid, folder):
+    image_filename = f'image_{imageid}_product_{productid}.jpg'
+    image_path = os.path.join(folder, image_filename)
+    return os.path.isfile(image_path)
 
 def fusion_description_designation():
     X = pd.read_csv('data/X_train.csv', index_col=0)
@@ -35,15 +42,9 @@ def re_echantillonage(X, y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=66)
     return X_train, X_test, y_train, y_test
 
-def check_image_exists(imageid, productid, folder):
-    image_filename = f'image_{imageid}_product_{productid}.jpg'
-    image_path = os.path.join(folder, image_filename)
-    return os.path.isfile(image_path)
-
 def detect_lang(texte):
     try:
         langue = detect(texte) #code de la langue
-        #return langue
         return language_labels.get(langue, "Langue non supportée")
     except lang_detect_exception.LangDetectException:
         return "Erreur_langue"
@@ -59,6 +60,8 @@ def clean_column_descriptif(row):
     words = set(stopwords.words('french'))
             
     texte = row
+
+    # print(texte)
 
     # Tokenisation
     # texte = word_tokenize(texte)
@@ -79,12 +82,19 @@ def clean_column_descriptif(row):
     texte = BeautifulSoup(texte, "html.parser").get_text()
 
     # Supprimer les nombres et caractères spéciaux
-    texte = re.sub(r'\d+', '', texte)
+    texte = re.sub('\d+', '', texte)
     texte = re.sub("[^a-zA-Z]", " ", texte)
+
+    # On traduit chaques mots de texte en français
+    # print(texte)
+    # texte = GoogleTranslator(source='auto', target='fr').translate(texte)
 
     # Supprimer les stopwords et les mots de moins de 3 lettres
     texte = ' '.join([word for word in texte.split() if word not in words])
     texte = ' '.join([word for word in texte.split() if len(word) > 2])
+
+    # print(texte)
+    # print()
 
     # Racinisation et lemmatisation
     # stemmer = FrenchStemmer()
@@ -92,59 +102,47 @@ def clean_column_descriptif(row):
 
     return texte
 
-language_labels = {'af':'Afrikaans',
-'ar':'Arabe',
-'bg':'Bulgare',
-'bn':'Bengali',
-'ca':'Catalan',
-'cs':'Tchèque',
-'cy':'Gallois',
-'da':'Danois',
-'de':'Allemand',
-'el':'Grec',
-'en':'Anglais',
-'es':'Espagnol',
-'et':'Estonien',
-'fa':'Persan',
-'fi':'Finnois',
-'fr':'Français',
-'gu':'Gujarati',
-'he':'Hébreu',
-'hi':'Hindi',
-'hr':'Croate',
-'hu':'Hongrois',
-'id':'Indonésien',
-'it':'Italien',
-'ja':'Japonais',
-'kn':'Kannada',
-'ko':'Coréen',
-'lt':'Lituanien',
-'lv':'Letton',
-'mk':'Macédonien',
-'ml':'Malayalam',
-'mr':'Marathi',
-'ne':'Népalais',
-'nl':'Néerlandais',
-'no':'Norvégien',
-'pa':'Pendjabi',
-'pl':'Polonais',
-'pt':'Portugais',
-'ro':'Roumain',
-'ru':'Russe',
-'sk':'Slovaque',
-'sl':'Slovène',
-'so':'Somali',
-'sq':'Albanais',
-'sv':'Suédois',
-'sw':'Swahili',
-'ta':'Tamoul',
-'te':'Télougou',
-'th':'Thaï',
-'tl':'Tagalog',
-'tr':'Turc',
-'uk':'Ukrainien',
-'ur':'Ourdou',
-'vi':'Vietnamien',
-'zh-cn':'Chinois simplifié',
-'zh-tw':'Chinois tradition' 
-}
+def nettoyer_et_separer(description):
+    description = description.lower()  # convertir en minuscules
+    mots = re.findall(r'\b\w+\b', description)  # extraire les mots
+    return mots
+
+def word_occurence_by_prdtypecode(X, y):
+    yy = pd.DataFrame()
+    yy['prdtypecode']= y['prdtypecode']
+    yy['descriptif'] = X['descriptif']
+
+    # Appliquer la fonction de nettoyage à chaque ligne de la colonne 'designation'
+    yy['mots'] = yy['descriptif'].apply(nettoyer_et_separer)
+
+    # Initialiser un dictionnaire vide pour stocker les compteurs par classe
+    compteurs_par_classe = {}
+
+    # Parcourir chaque groupe de classe
+    for classe, groupe in yy.groupby('prdtypecode'):
+        # Combiner tous les mots de la classe en une seule liste
+        tous_les_mots = [mot for liste_mots in groupe['mots'] for mot in liste_mots]
+        # Compter les occurrences de chaque mot
+        compteurs_par_classe[classe] = Counter(tous_les_mots)
+
+    # Créer un DataFrame à partir du dictionnaire de compteurs
+    df_result = pd.DataFrame(compteurs_par_classe).fillna(0).astype(int)
+    return df_result
+
+def pre_processing():
+    print("Fusion des colonnes description et designation :\n")
+    X, y = fusion_description_designation()
+
+    print("Analyse des langues dans la colonne descriptif :\n")
+    # df_lang = traitement_lang(X)
+
+    print("Ré-échantillonnage du jeu de donnée :\n")
+    X_train, X_test, y_train, y_test = re_echantillonage(X,y)
+
+    print("Nettoyage de la colonne descriptif:\n")
+    X['descriptif'] = X.apply(lambda row: clean_column_descriptif(row['descriptif']), axis=1)
+    X.to_csv('data/X_preprocessed.csv')
+
+    print("Création du DataFrame (nombre d'occurence des mots en fonction du prdtypecode) :\n")
+    df_result = word_occurence_by_prdtypecode(X, y)
+    print(df_result)

@@ -92,7 +92,6 @@ def clean_column_descriptif(row):
 
     return texte
 
-
 language_labels = {'af':'Afrikaans',
 'ar':'Arabe',
 'bg':'Bulgare',

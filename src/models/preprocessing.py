@@ -152,10 +152,8 @@ def pre_processing():
         X['descriptif'] = X.apply(lambda row: clean_column_descriptif(row['descriptif']), axis=1)
         X.to_csv('data/X_preprocessed.csv')
 
-    print("Création du DataFrame (nombre d'occurence des mots en fonction du prdtypecode)\n")
-    df_result = word_occurence_by_prdtypecode(X, y)
-
     print("Nuage de mots pour les 27 catégories\n")
+    df_result = word_occurence_by_prdtypecode(X, y)
     if len(os.listdir('reports/figures/nuage_de_mot')) == 0:
         nuage_de_mots(df_result)
 

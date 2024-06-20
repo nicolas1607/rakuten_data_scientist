@@ -55,19 +55,15 @@ def traitement_lang(X):
     print("nombre d'éléments=", len(df_lang))
     return df_lang
 
-def clean_column_descriptif(row):
+def clean_column_descriptif(texte):
 
     words = set(stopwords.words('french'))
-            
-    texte = row
-
-    # print(texte)
 
     # Tokenisation
     # texte = word_tokenize(texte)
 
     # Retrait des espaces excessifs
-    texte = re.sub("\s{2,}", " ", row)
+    texte = re.sub("\s{2,}", " ", texte)
 
     # Mettre en minuscule
     texte = texte.lower()
@@ -136,7 +132,13 @@ def pre_processing():
     # df_lang = traitement_lang(X)
 
     print("Nettoyage de la colonne descriptif\n")
-    X['descriptif'] = X.apply(lambda row: clean_column_descriptif(row['descriptif']), axis=1)
+    if os.path.exists("data/X_preprocessed.csv"):
+        X = pd.read_csv('data/X_preprocessed.csv')
+        X = X.drop('Unnamed: 0', axis=1)
+        X = X.fillna('')
+    else:
+        X['descriptif'] = X.apply(lambda row: clean_column_descriptif(row['descriptif']), axis=1)
+        X.to_csv('data/X_preprocessed.csv')
 
     print("Création du DataFrame (nombre d'occurence des mots en fonction du prdtypecode)\n")
     df_result = word_occurence_by_prdtypecode(X, y)

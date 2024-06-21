@@ -61,7 +61,7 @@ def traitement_lang(X):
 
 def clean_column_descriptif(texte):
 
-    words = set(stopwords.words('french'))
+    words = set(stopwords.words())
 
     # Tokenisation
     # texte = word_tokenize(texte)
@@ -83,6 +83,7 @@ def clean_column_descriptif(texte):
 
     # Supprimer les nombres et caractères spéciaux
     texte = re.sub('\d+', '', texte)
+    # Attention : les caractères spéciaux semblent supprimer les accents (ex : é)
     texte = re.sub("[^a-zA-Z]", " ", texte)
 
     # On traduit chaques mots de texte en français

@@ -1,7 +1,4 @@
-import numpy as np
 import pandas as pd
-
-from PIL import Image
 from exploration import exploration_donnee
 from visualisation import data_visualisation
 
@@ -14,7 +11,7 @@ X_test = pd.read_csv('data/X_test.csv', index_col=0)
 fusion = pd.merge(X_train, Y_train, left_index=True, right_index=True)
 
 # Exploration des données
-# exploration_donnee(fusion)
+exploration_donnee(fusion)
 
 # Data visualisation
 data_visualisation(fusion)

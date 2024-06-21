@@ -53,12 +53,6 @@ def detect_lang(texte):
     except lang_detect_exception.LangDetectException:
         return "Erreur_langue"
 
-def traitement_lang(X):
-    df_lang=pd.DataFrame(X['descriptif'].apply(detect_lang))
-    print(df_lang.value_counts())
-    print("nombre d'éléments=", len(df_lang))
-    return df_lang
-
 def clean_column_descriptif(texte):
 
     words = set(stopwords.words('french'))
@@ -146,7 +140,16 @@ def pre_processing():
     X, y = fusion_description_designation()
 
     print("Analyse des langues dans la colonne descriptif\n")
-    # df_lang = traitement_lang(X)
+    if os.path.exists("data/df_lang_preprocessed.csv"):
+        df_lang = pd.read_csv('data/df_lang_preprocessed.csv')
+        df_lang = df_lang.drop('Unnamed: 0', axis=1)
+    else:
+        df_lang=pd.DataFrame(X['descriptif'].apply(detect_lang))
+        df_lang.to_csv('data/df_lang_preprocessed.csv')
+    
+    print(df_lang.value_counts())
+    print("nombre d'éléments total =", len(df_lang))
+ 
 
     print("Nettoyage de la colonne descriptif\n")
     if os.path.exists("data/X_preprocessed.csv"):

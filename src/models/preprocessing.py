@@ -24,6 +24,7 @@ from nltk.stem.snowball import FrenchStemmer
 from language_labels import language_labels
 from langdetect import detect, lang_detect_exception, DetectorFactory
 from collections import Counter
+from unidecode import unidecode
 from deep_translator import GoogleTranslator
 from wordcloud import WordCloud
 from PIL import Image 
@@ -57,39 +58,33 @@ def clean_column_descriptif(texte):
 
     words = set(stopwords.words())
 
-    # Tokenisation
-    # texte = word_tokenize(texte)
-
     # Retrait des espaces excessifs
     texte = re.sub("\s{2,}", " ", texte)
 
     # Mettre en minuscule
     texte = texte.lower()
 
-    # Supprimer les noms de fichiers (jpg, jpeg, png, gif, pdf)
-    # texte = re.sub(r'\b\w+\.(jpg|jpeg|png|gif|pdf)\b', '', texte)
-
-    # Supprimer les URLs
-    # texte = re.sub(r'http\S+', '', texte)
-
     # Supprimer les balises HTML
     texte = BeautifulSoup(texte, "html.parser").get_text()
 
-    # Supprimer les nombres et caractères spéciaux
+    # Supprimer les nombres 
     texte = re.sub('\d+', '', texte)
-    # Attention : les caractères spéciaux semblent supprimer les accents (ex : é)
+
+    # Supprimer les caractères accentués
+    texte = unidecode(texte)
+
+    # Supprimer les caractères spéciaux
     texte = re.sub("[^a-zA-Z]", " ", texte)
 
     # On traduit chaques mots de texte en français
-    # print(texte)
     # texte = GoogleTranslator(source='auto', target='fr').translate(texte)
 
-    # Supprimer les stopwords et les mots de moins de 3 lettres
+    # Supprimer les stopwords et les mots de moins de 4 lettres
     texte = ' '.join([word for word in texte.split() if word not in words])
-    texte = ' '.join([word for word in texte.split() if len(word) > 2])
+    texte = ' '.join([word for word in texte.split() if len(word) > 3])
 
-    # print(texte)
-    # print()
+    # Tokenisation
+    # texte = word_tokenize(texte)
 
     # Racinisation et lemmatisation
     # stemmer = FrenchStemmer()
@@ -97,7 +92,7 @@ def clean_column_descriptif(texte):
 
     return texte
 
-def nettoyer_et_separer(description):
+def get_list_mots(description):
     mots = re.findall(r'\b\w+\b', description)  # extraire les mots
     return mots
 
@@ -107,7 +102,7 @@ def word_occurence_by_prdtypecode(X, y):
     df['descriptif'] = X['descriptif']
 
     # Appliquer la fonction de nettoyage à chaque ligne de la colonne 'designation'
-    df['mots'] = df['descriptif'].apply(nettoyer_et_separer)
+    df['mots'] = df['descriptif'].apply(get_list_mots)
 
     # Initialiser un dictionnaire vide pour stocker les compteurs par classe
     compteurs_par_classe = {}
@@ -134,7 +129,7 @@ def nuage_de_mots(df_result):
 
 def pre_processing():
 
-    # Vérification des images
+    print("Pre-processing des images\n")
     pre_processing_image()
 
     print("Fusion des colonnes description et designation\n")
@@ -147,11 +142,9 @@ def pre_processing():
     else:
         df_lang=pd.DataFrame(X['descriptif'].apply(detect_lang))
         df_lang.to_csv('data/df_lang_preprocessed.csv')
-    
     print(df_lang.value_counts())
     print("nombre d'éléments total =", len(df_lang))
  
-
     print("Nettoyage de la colonne descriptif\n")
     if os.path.exists("data/X_preprocessed.csv"):
         X = pd.read_csv('data/X_preprocessed.csv')
@@ -170,7 +163,6 @@ def pre_processing():
     X_train, X_test, y_train, y_test = re_echantillonage(X,y)
 
     return X_train, X_test, y_train, y_test
-
 
 def pre_processing_image():
     for filename in os.listdir("data/images/image_train"):

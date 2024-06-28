@@ -163,7 +163,7 @@ cython_debug/
 .vscode/
 
 # Data folder
-data/images/
-data/images.zip
-data/X_train.csv
-data/Y_train.csv
+data/
+
+# Model folder
+models/

@@ -5,10 +5,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from nltk.stem.snowball import FrenchStemmer
 from nltk.stem import WordNetLemmatizer
 from language_labels import language_labels
 from langdetect import detect, lang_detect_exception, DetectorFactory
@@ -62,7 +61,7 @@ def clean_column_descriptif(texte):
     # Supprimer les nombres 
     texte = re.sub('\d+', '', texte)
 
-    # Supprimer les caractères accentués
+    # Supprimer les accents
     texte = unidecode(texte)
 
     # Supprimer les caractères spéciaux
@@ -152,17 +151,8 @@ def pre_processing():
     #     df = pd.read_csv('data/df_traducted.csv')
     #     df = df.fillna('')
     # else:
-    #     df['descriptif_trad'] = df.progress_apply(lambda row: translate(row), axis=1)
+    #     df['descriptif_trad'] = df['descriptif_cleaned'].progress_apply(lambda row: translate(row), axis=1)
     #     df.to_csv('data/df_traducted.csv')
-
-    # print("Racinisation de la colonne descriptif\n")
-    # if os.path.exists("data/df_stemmed.csv"):
-    #     df = pd.read_csv('data/df_stemmed.csv')
-    #     df = df.fillna('')
-    # else:
-    #     stemmer = FrenchStemmer()
-    #     df['descriptif_cleaned'] = df['descriptif_cleaned'].progress_apply(lambda texte: ' '.join([stemmer.stem(mot) for mot in texte.split()]))
-    #     df.to_csv('data/df_stemmed.csv')
 
     print("Lemmatisation de la colonne descriptif\n")
     if os.path.exists("data/df_lemmatized.csv"):

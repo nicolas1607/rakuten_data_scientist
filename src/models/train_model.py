@@ -1,39 +1,92 @@
-import pandas as pd
+import os
+import pickle
 
 from sklearn.svm import SVC
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report, confusion_matrix
+
+def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres):
+    
+    # Créer ou charger la grille de recherche
+    filename = "models/" + model_name + "_grid.pkl"
+    if os.path.exists(filename):
+        grid_clf = pickle.load(open(filename, "rb"))
+    else:
+        parametres = {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]}
+        grid_clf = GridSearchCV(estimator=model, param_grid=parametres)
+        grid_clf.fit(X_train, y_train)
+        pickle.dump(grid_clf, open(filename, "wb"))
+
+    # Afficher les meilleurs paramètres de la grille pour notre modèle
+    print(grid_clf.best_params_)
+
+    # Prédiction des données et affichage des résultats
+    y_pred = grid_clf.predict(X_test)
+    print(classification_report(y_test, y_pred))
+    print(confusion_matrix(y_test, y_pred))
+    print("Score grid :", grid_clf.score(X_test, y_test))
+
+    return grid_clf
 
 def modele_svm(X_train, X_test, y_train, y_test):
 
     print("Modèlisation SVM\n")
 
-    # Créer et entraîner le modèle
-    svm = SVC()
-    svm.fit(X_train, y_train)
+    # Créer ou charger le modèle
+    if os.path.exists("models/svm.pkl"):
+        svm = pickle.load(open("models/svm.pkl", "rb"))
+    else:
+        svm = SVC()
+        svm.fit(X_train, y_train)
+        pickle.dump(svm, open("models/svm.pkl", "wb"))
 
-    # Prédiction des données de l'ensemble de test
+    # Prédiction des données et affichage des résultats
     y_pred = svm.predict(X_test)
-    pd.crosstab(y_test, y_pred, rownames=['Classe réelle'], colnames=['Classe prédite']) # matrice de confusion
-    
-    # Afficher les résultats
     print(classification_report(y_test, y_pred))
     print(confusion_matrix(y_test, y_pred))
-    print("Score :", svm.score(X_test, y_test))
+    print("Score grid :", svm.score(X_test, y_test))
 
-    # Créer et entraîner une grille de recherche
-    parametres = {'C':[0.001, 0.01, 0.1, 1, 10, 100], 'kernel':['rbf','linear', 'poly', 'sigmoid'], 'gamma':[0.001, 0.01, 0.1, 1, 10, 100]}
-    grid_clf = GridSearchCV(estimator=svm, param_grid=parametres)
-    grille = grid_clf.fit(X_train, y_train)
+    return None
 
-    # Afficher les combinaisons possibles d'hyperparamètres et la performance moyenne 
-    print(pd.DataFrame.from_dict(grille.cv_results_).loc[:,['params', 'mean_test_score']])
+def modele_multinomialNB(X_train, X_test, y_train, y_test):
+    
+    print("Modèlisation MultinomialNB\n")
 
-    # Afficher les meilleurs paramètres de la grille pour notre modèle
-    print(grid_clf.best_params_)
+    # Créer ou charger le modèle
+    if os.path.exists("models/multinomialNB.pkl"):
+        multinomialNB = pickle.load(open("models/multinomialNB.pkl", "rb"))
+    else:
+        multinomialNB = MultinomialNB()
+        multinomialNB.fit(X_train, y_train)
+        pickle.dump(multinomialNB, open("models/multinomialNB.pkl", "wb"))
 
-    # Prédiction des données de l'ensemble de test
-    y_pred = grid_clf.predict(X_test)
-    pd.crosstab(y_test, y_pred, rownames=['Classe réelle'], colnames=['Classe prédite']) # matrice de confusion
+    # Prédiction des données et affichage des résultats
+    y_pred = multinomialNB.predict(X_test)
+    print("Score :", multinomialNB.score(X_test, y_test))
+
+    # Créer et entraîner la grille de recherche
+    grid_search(X_train, X_test, y_train, y_test, multinomialNB, 'multinomialNB', {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]})
+
+    return None
+
+def modele_complementNB(X_train, X_test, y_train, y_test):
+        
+    print("Modèlisation ComplementNB\n")
+
+    # Créer ou charger le modèle
+    if os.path.exists("models/complementNB.pkl"):
+        complementNB = pickle.load(open("models/complementNB.pkl", "rb"))
+    else:
+        complementNB = ComplementNB()
+        complementNB.fit(X_train, y_train)
+        pickle.dump(complementNB, open("models/complementNB.pkl", "wb"))
+
+    # Prédiction des données et affichage des résultats
+    y_pred = complementNB.predict(X_test)
+    print("Score :", complementNB.score(X_test, y_test))
+
+    # Créer et entraîner la grille de recherche
+    grid_search(X_train, X_test, y_train, y_test, complementNB, 'complementNB', {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]})
 
     return None

@@ -74,13 +74,10 @@ def clean_column_descriptif(texte):
 
     return texte
 
-def word_occurence_by_prdtypecode(X, y):
-    df = pd.DataFrame()
-    df['prdtypecode']= y['prdtypecode']
-    df['descriptif'] = X['descriptif_cleaned']
+def word_occurence_by_prdtypecode(df):
 
     # Appliquer la fonction de nettoyage à chaque ligne de la colonne 'designation'
-    df['mots'] = df['descriptif'].apply(lambda description: re.findall(r'\b\w+\b', description))
+    df['mots'] = df['descriptif_cleaned'].apply(lambda description: re.findall(r'\b\w+\b', description))
 
     # Initialiser un dictionnaire vide pour stocker les compteurs par classe
     compteurs_par_classe = {}
@@ -123,8 +120,8 @@ def translate(texte):
 
 def pre_processing():
 
-    print("Pre-processing des images\n")
-    pre_processing_image()
+    # print("Pre-processing des images\n")
+    # pre_processing_image()
 
     print("Fusion des colonnes description et designation\n")
     df = fusion_description_designation()
@@ -173,15 +170,11 @@ def pre_processing():
 
     print("Nuage de mots pour les 27 catégories\n")
     if len(os.listdir('reports/figures/nuage_de_mot')) == 0:
-        df_result = word_occurence_by_prdtypecode(X, df['prdtypecode'])
+        df_result = word_occurence_by_prdtypecode(df)
         nuage_de_mots(df_result)
 
-    print("Séparation des données en variables explicatives et cible\n")
-    X = df['tokens']
-    y = df['prdtypecode']
-
     print("Ré-échantillonnage du jeu de donnée\n")
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=66)
+    X_train, X_test, y_train, y_test = train_test_split(df['tokens'], df['prdtypecode'], test_size=0.2, random_state=66)
 
     print("Vectorisation de la colonne descriptif\n")
     vectorizer = TfidfVectorizer()

@@ -19,7 +19,7 @@ from wordcloud import WordCloud
 from PIL import Image
 from tqdm import tqdm
 
-nltk.download('wordnet')
+#### !! nltk.download('wordnet')
 tqdm.pandas()
 
 DetectorFactory.seed = 0

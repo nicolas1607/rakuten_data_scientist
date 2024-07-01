@@ -1,10 +1,12 @@
 import os
 import pickle
+import time
 
-from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import SGDClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
@@ -104,7 +106,7 @@ def modele_multinomialNB(X_train, X_test, y_train, y_test):
     return None
 
 def modele_complementNB(X_train, X_test, y_train, y_test):
-        
+    
     print("Modèlisation ComplementNB\n")
 
     # Créer ou charger le modèle
@@ -218,3 +220,35 @@ def modele_sgd(X_train, X_test, y_train, y_test):
     # bayes_search(X_train, X_test, y_train, y_test, sgd, 'sgd', parametres)
 
     return None
+  
+def convertir_duree(secondes):
+    minutes, secondes = divmod(secondes, 60)
+    heures, minutes = divmod(minutes, 60)
+    return heures, minutes, secondes
+
+def modele_decisionTree(X_train, X_test, y_train, y_test):
+
+    print("Modélisation Arbre de Décision\n")
+    modele = 'decisionTree'
+
+    # Créer ou charger le modèle
+    if os.path.exists("models/decisiontree.pkl"):
+        print("Chargement du modèle sauvegardé")
+        dt = pickle.load(open("models/decisiontree.pkl", "rb"))
+    else:
+        start_time = time.time()
+        dt = DecisionTreeClassifier()
+        dt.fit(X_train, y_train)
+        end_time = time.time()
+        heures, minutes, secondes = convertir_duree(end_time - start_time)
+        print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
+        pickle.dump(dt, open("models/dt.pkl", "wb"))
+
+    # Prédiction des données et affichage des résultats
+    y_pred = dt.predict(X_test)
+    print(classification_report(y_test, y_pred))
+    print(confusion_matrix(y_test, y_pred))
+    print("Score grid :", dt.score(X_test, y_test))
+
+    return None
+

@@ -7,12 +7,14 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import SGDClassifier
 
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import classification_report, confusion_matrix, f1_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
 from skopt import BayesSearchCV
 from sklearnex import patch_sklearn
 
 # Intel(R) Extension for Scikit-learn
 patch_sklearn()
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 
 def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres):
     
@@ -57,6 +59,26 @@ def bayes_search(X_train, X_test, y_train, y_test, model, model_name, parametres
     print("Score bayes_clf :", bayes_clf.score(X_test, y_test))
 
     return bayes_clf
+
+def modele_regression_logistique(X_train, X_test, y_train, y_test):
+    
+    print("Modèlisation Logistic Regression\n")
+
+    # Créer ou charger le modèle
+    if os.path.exists("models/logistic_regression.pkl"):
+        model = pickle.load(open("models/logistic_regression.pkl", "rb"))
+    else:
+        model = LogisticRegression(C=0.1, max_iter=10000, random_state=123)
+        model.fit(X_train, y_train)
+        pickle.dump(model, open("models/logistic_regression.pkl", "wb"))
+    
+    # Prédiction des données et affichage des résultats
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print("Score :", accuracy)
+    print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
+    
+    return model, accuracy
 
 def modele_multinomialNB(X_train, X_test, y_train, y_test):
     

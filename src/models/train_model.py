@@ -2,7 +2,7 @@ import os
 import pickle
 
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
-
+from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import SGDClassifier
 
@@ -13,8 +13,6 @@ from sklearnex import patch_sklearn
 
 # Intel(R) Extension for Scikit-learn
 patch_sklearn()
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
 
 def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres):
     

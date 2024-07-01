@@ -4,7 +4,9 @@ import pickle
 from sklearn.svm import SVC
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 
 def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres):
     
@@ -90,3 +92,23 @@ def modele_complementNB(X_train, X_test, y_train, y_test):
     grid_search(X_train, X_test, y_train, y_test, complementNB, 'complementNB', {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]})
 
     return None
+
+
+def modele_regression_logistique(X_train, X_test, y_train, y_test):
+    
+    # Vectoriser le texte en utilisant TF-IDF
+    vectorizer = TfidfVectorizer()
+    X_train_tfidf = vectorizer.fit_transform(X_train)
+    X_test_tfidf = vectorizer.transform(X_test)
+    
+    # Entraîner le modèle de régression logistique
+    model = LogisticRegression()
+    model.fit(X_train_tfidf, y_train)
+    
+    # Prédiction des données et affichage des résultats
+    y_pred = model.predict(X_test_tfidf)
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    
+    return model, vectorizer, accuracy
+

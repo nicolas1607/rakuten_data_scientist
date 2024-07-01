@@ -2,6 +2,11 @@ import os
 import pickle
 import time
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
@@ -23,17 +28,24 @@ def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
     if os.path.exists(filename):
         grid_clf = pickle.load(open(filename, "rb"))
     else:
+        start_time = time.time()
         grid_clf = GridSearchCV(estimator=model, param_grid=parametres, n_jobs=-1, cv=3, verbose=1)
         grid_clf.fit(X_train, y_train)
+        end_time = time.time()
+        heures, minutes, secondes = convertir_duree(end_time - start_time)
+        print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
         pickle.dump(grid_clf, open(filename, "wb"))
 
     # Afficher les meilleurs paramètres de la grille pour notre modèle
-    print(grid_clf.best_params_)
+    print("Les meilleurs paramètres de la grille :", grid_clf.best_params_)
+    #print("depth atteinte :", grid_clf.tree_.max_depth)
 
     # Prédiction des données et affichage des résultats
-    # y_pred = grid_clf.predict(X_test)
-    # print(classification_report(y_test, y_pred))
-    # print(confusion_matrix(y_test, y_pred))
+    y_pred = grid_clf.predict(X_test)
+    print(classification_report(y_test, y_pred))
+    conf_mat = confusion_matrix(y_test, y_pred)
+    print(conf_mat)
+    confusion_heatmap(conf_mat, model_name+"_grid")
     print("Score grid :", grid_clf.score(X_test, y_test))
 
     return grid_clf
@@ -226,29 +238,51 @@ def convertir_duree(secondes):
     heures, minutes = divmod(minutes, 60)
     return heures, minutes, secondes
 
-def modele_decisionTree(X_train, X_test, y_train, y_test):
+def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid):
+    
+    model_name = 'decisionTree'
+    
+    if (not booGrid):
+        print("Modélisation Arbre de Décision (hors gridSearch)\n")
 
-    print("Modélisation Arbre de Décision\n")
-    modele = 'decisionTree'
+        # Créer ou charger le modèle
+        if os.path.exists("models/"+model_name+".pkl"):
+            print("Chargement du modèle sauvegardé")
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            start_time = time.time()
+            model = DecisionTreeClassifier()
+            model.fit(X_train, y_train)
+            end_time = time.time()
+            heures, minutes, secondes = convertir_duree(end_time - start_time)
+            print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
 
-    # Créer ou charger le modèle
-    if os.path.exists("models/decisiontree.pkl"):
-        print("Chargement du modèle sauvegardé")
-        dt = pickle.load(open("models/decisiontree.pkl", "rb"))
-    else:
-        start_time = time.time()
-        dt = DecisionTreeClassifier()
-        dt.fit(X_train, y_train)
-        end_time = time.time()
-        heures, minutes, secondes = convertir_duree(end_time - start_time)
-        print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
-        pickle.dump(dt, open("models/dt.pkl", "wb"))
-
-    # Prédiction des données et affichage des résultats
-    y_pred = dt.predict(X_test)
-    print(classification_report(y_test, y_pred))
-    print(confusion_matrix(y_test, y_pred))
-    print("Score grid :", dt.score(X_test, y_test))
+        print("depth atteinte :", model.tree_.max_depth)
+        # Prédiction des données et affichage des résultats
+        y_pred = model.predict(X_test)
+        print(classification_report(y_test, y_pred))
+        conf_mat = confusion_matrix(y_test, y_pred)
+        print(conf_mat)
+        confusion_heatmap(conf_mat, model_name)
+        print("Score :", model.score(X_test, y_test))
+    else : 
+        print("Modélisation Arbre de Décision (gridSearch)\n")
+        model = DecisionTreeClassifier()
+        parametres = {
+            #'max_depth': [4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 30, 40, 50, 70, 90, 120, 150],
+            'criterion': ['gini', 'entropy']
+        }
+        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     return None
 
+
+def confusion_heatmap(conf_mat, modele):
+    fig, ax = plt.subplots(figsize = (15, 15))
+    sns.heatmap(conf_mat, cmap = "coolwarm", annot=True, fmt="d")
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Matrice de confusion :'+modele)
+    plt.savefig("reports/figures/matrice_de_confusion/matrice_confusion_heatmap_"+modele+".png", bbox_inches='tight')
+    #plt.show();

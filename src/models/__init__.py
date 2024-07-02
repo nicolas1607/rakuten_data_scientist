@@ -23,3 +23,4 @@ X_train, X_test, y_train, y_test = pre_processing()
 
 # modele_decisionTree(X_train, X_test, y_train, y_test)
 # modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False)
+modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=True)

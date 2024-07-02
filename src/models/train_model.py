@@ -1,14 +1,19 @@
 import os
 import pickle
 import time
+import pandas as pd
+import numpy as np
+import xgboost as xgb
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 
-from sklearn.metrics import classification_report, accuracy_score, f1_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
 from sklearnex import patch_sklearn
@@ -89,78 +94,87 @@ def modele_regression_logistique(X_train, X_test, y_train, y_test):
     
     return model, accuracy
 
-def modele_multinomialNB(X_train, X_test, y_train, y_test):
+def modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False):
     
-    print("Modèlisation MultinomialNB\n")
+    model_name = 'multinomialNB'
 
-    # Créer ou charger le modèle
-    if os.path.exists("models/multinomialNB.pkl"):
-        multinomialNB = pickle.load(open("models/multinomialNB.pkl", "rb"))
+    if (not booGrid):
+        print("Modèlisation MultinomialNB\n")
+        if os.path.exists("models/"+model_name+".pkl"):
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            model = MultinomialNB()
+            model.fit(X_train, y_train)
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+
+        y_pred = model.predict(X_test)
+        print(classification_report(y_test, y_pred))
+        confusion_heatmap(y_test, y_pred, model_name)
+        print("Score :", model.score(X_test, y_test))
+        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
+    
     else:
-        multinomialNB = MultinomialNB(alpha=0.1, fit_prior=False, force_alpha=True)
-        multinomialNB.fit(X_train, y_train)
-        pickle.dump(multinomialNB, open("models/multinomialNB.pkl", "wb"))
 
-    # Prédiction des données et affichage des résultats
-    y_pred = multinomialNB.predict(X_test)
-    # print(classification_report(y_test, y_pred))
-    confusion_heatmap(y_test, y_pred, 'multinomialNB')
-    print("Score :", multinomialNB.score(X_test, y_test))
-    print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-
-    # Créer et entraîner la grille de recherche
-    # parametres = {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]}
-    # grid_search(X_train, X_test, y_train, y_test, multinomialNB, 'multinomialNB', parametres)
+        print("Modèlisation MultinomialNB (gridSearch)\n")
+        model = MultinomialNB()
+        parametres = {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]}
+        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     return None
 
-def modele_complementNB(X_train, X_test, y_train, y_test):
+def modele_complementNB(X_train, X_test, y_train, y_test, booGrid=False):
     
-    print("Modèlisation ComplementNB\n")
+    model_name = 'complementNB'
 
-    # Créer ou charger le modèle
-    if os.path.exists("models/complementNB.pkl"):
-        complementNB = pickle.load(open("models/complementNB.pkl", "rb"))
+    if (not booGrid):
+        print("Modèlisation ComplementNB\n")
+        if os.path.exists("models/"+model_name+".pkl"):
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            model = ComplementNB()
+            model.fit(X_train, y_train)
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+
+        y_pred = model.predict(X_test)
+        print(classification_report(y_test, y_pred))
+        print(confusion_matrix(y_test, y_pred))
+        print("Score :", model.score(X_test, y_test))
+        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
+
     else:
-        complementNB = ComplementNB(alpha=0.5, fit_prior=True, force_alpha=True)
-        complementNB.fit(X_train, y_train)
-        pickle.dump(complementNB, open("models/complementNB.pkl", "wb"))
 
-    # Prédiction des données et affichage des résultats
-    y_pred = complementNB.predict(X_test)
-    # print(classification_report(y_test, y_pred))
-    # print(confusion_matrix(y_test, y_pred))
-    print("Score :", complementNB.score(X_test, y_test))
-    print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-
-    # Créer et entraîner la grille de recherche
-    # parametres = {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]}
-    # grid_search(X_train, X_test, y_train, y_test, complementNB, 'complementNB', parametres)
+        print("Modèlisation ComplementNB (gridSearch)\n")
+        model = ComplementNB()
+        parametres = {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]}
+        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     return None
 
-def modele_linear_svm(X_train, X_test, y_train, y_test):
+def modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False):
 
-    print("Modèlisation Linear SVM\n")
+    model_name = 'linear_svm'
 
-    # Créer ou charger le modèle
-    if os.path.exists("models/linear_svm.pkl"):
-        linear_svm = pickle.load(open("models/linear_svm.pkl", "rb"))
+    if (not booGrid):
+        print("Modèlisation Linear SVM\n")
+        if os.path.exists("models/"+model_name+".pkl"):
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            model = LinearSVC()
+            model.fit(X_train, y_train)
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+
+        y_pred = model.predict(X_test)
+        print(classification_report(y_test, y_pred))
+        print(confusion_matrix(y_test, y_pred))
+        print("Score :", model.score(X_test, y_test))
+        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
+    
     else:
-        linear_svm = LinearSVC(C=0.739965107664931, max_iter=10000, dual='auto', random_state=123)
-        linear_svm.fit(X_train, y_train)
-        pickle.dump(linear_svm, open("models/linear_svm.pkl", "wb"))
-
-    # Prédiction des données et affichage des résultats
-    y_pred = linear_svm.predict(X_test)
-    # print(classification_report(y_test, y_pred))
-    # print(confusion_matrix(y_test, y_pred))
-    print("Score :", linear_svm.score(X_test, y_test))
-    print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
         
-    # Optimisation bayésienne des hyperparamètres
-    # parametres = {'C': (1e-6, 1e+6, 'log-uniform'), 'max_iter': (1000, 10000)}
-    # bayes_search(X_train, X_test, y_train, y_test, linear_svm, 'linear_svm', parametres)
+        print("Modèlisation Linear SVM (gridSearch)\n")
+        model = LinearSVC()
+        parametres = {'C': (1e-6, 1e+6, 'log-uniform'), 'max_iter': (1000, 10000)}
+        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     # Créer et entraîner un booster
     # ac = AdaBoostClassifier(estimator=linear_svm, n_estimators=400, algorithm='SAMME', random_state=123)
@@ -180,57 +194,63 @@ def modele_linear_svm(X_train, X_test, y_train, y_test):
 
     return None
 
-def modele_svm(X_train, X_test, y_train, y_test):
+def modele_svm(X_train, X_test, y_train, y_test, booGrid=False):
 
-    print("Modèlisation SVM\n")
+    model_name = 'svm'
 
-    # Créer ou charger le modèle
-    if os.path.exists("models/svm.pkl"):
-        svm = pickle.load(open("models/svm.pkl", "rb"))
+    if (not booGrid):
+        print("Modèlisation SVM\n")
+        if os.path.exists("models/"+model_name+".pkl"):
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            model = SVC()
+            model.fit(X_train, y_train)
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+
+        y_pred = model.predict(X_test)
+        print(classification_report(y_test, y_pred))
+        print(confusion_matrix(y_test, y_pred))
+        print("Score :", model.score(X_test, y_test))
+        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
+
     else:
-        svm = SVC(kernel='linear', random_state=123)
-        svm.fit(X_train, y_train)
-        pickle.dump(svm, open("models/svm.pkl", "wb"))
 
-    # Prédiction des données et affichage des résultats
-    y_pred = svm.predict(X_test)
-    # print(classification_report(y_test, y_pred))
-    # print(confusion_matrix(y_test, y_pred))
-    print("Score :", svm.score(X_test, y_test))
-    print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-        
-    # Optimisation bayésienne des hyperparamètres
-    # parametres = {'C': (1e-6, 1e+6, 'log-uniform'), 'gamma': (1e-6, 1e+1, 'log-uniform'), 'degree': (1, 8)}
-    # bayes_search(X_train, X_test, y_train, y_test, svm, 'svm', parametres)
+        print("Modèlisation SVM (gridSearch)\n")
+        model = SVC()
+        parametres = {'C': (1e-6, 1e+6, 'log-uniform'), 'gamma': (1e-6, 1e+1, 'log-uniform'), 'degree': (1, 8)}
+        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     return None
 
-def modele_sgd(X_train, X_test, y_train, y_test):
+def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
 
-    print("Modèlisation SGD\n")
+    model_name = 'sgd'
 
-    # Créer ou charger le modèle
-    if os.path.exists("models/sgd.pkl"):
-        sgd = pickle.load(open("models/sgd.pkl", "rb"))
+    if (not booGrid):
+        print("Modèlisation SGDClassifier\n")
+        if os.path.exists("models/"+model_name+".pkl"):
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            model = SGDClassifier()
+            model.fit(X_train, y_train)
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+
+        y_pred = model.predict(X_test)
+        print(classification_report(y_test, y_pred))
+        print(confusion_matrix(y_test, y_pred))
+        print("Score :", model.score(X_test, y_test))
+        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
+
     else:
-        sgd = SGDClassifier(alpha=0.0001, loss='modified_huber', max_iter= 2000, penalty='l2', random_state=123)
-        sgd.fit(X_train, y_train)
-        pickle.dump(sgd, open("models/sgd.pkl", "wb"))
 
-    # Prédiction des données et affichage des résultats
-    y_pred = sgd.predict(X_test)
-    # print(classification_report(y_test, y_pred))
-    # print(confusion_matrix(y_test, y_pred))
-    print("Score :", sgd.score(X_test, y_test))
-    print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-
-    # Optimisation bayésienne des hyperparamètres
-    # parametres = {'loss': ['hinge', 'log_loss', 'modified_huber', 'squared_hinge', 'perceptron'], 'penalty': ['l2', 'l1', 'elasticnet'], 'alpha': [0.0001, 0.001, 0.01], 'max_iter': [1000, 2000, 3000, 5000, 10000]}
-    # bayes_search(X_train, X_test, y_train, y_test, sgd, 'sgd', parametres)
+        print("Modèlisation SGDClassifier (gridSearch)\n")
+        model = SGDClassifier()
+        parametres = {'loss': ['hinge', 'log_loss', 'modified_huber', 'squared_hinge', 'perceptron'], 'penalty': ['l2', 'l1', 'elasticnet'], 'alpha': [0.0001, 0.001, 0.01], 'max_iter': [1000, 2000, 3000, 5000, 10000]}
+        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     return None
 
-def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid):
+def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
     
     model_name = 'decisionTree'
     

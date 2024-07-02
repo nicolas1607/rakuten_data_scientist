@@ -2,21 +2,18 @@ import os
 import pickle
 import time
 
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
-
-
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
 
+from sklearn.metrics import classification_report, accuracy_score, f1_score
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
 from skopt import BayesSearchCV
 from sklearnex import patch_sklearn
+
+from toolbox import *
 
 # Intel(R) Extension for Scikit-learn
 patch_sklearn()
@@ -43,10 +40,9 @@ def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
     # Prédiction des données et affichage des résultats
     y_pred = grid_clf.predict(X_test)
     print(classification_report(y_test, y_pred))
-    conf_mat = confusion_matrix(y_test, y_pred)
-    print(conf_mat)
-    confusion_heatmap(conf_mat, model_name+"_grid")
+    confusion_heatmap(y_test, y_pred, model_name+"_grid")
     print("Score grid :", grid_clf.score(X_test, y_test))
+    print("F1-score grid :", f1_score(y_test, y_pred, average='weighted'))
 
     return grid_clf
 
@@ -67,8 +63,9 @@ def bayes_search(X_train, X_test, y_train, y_test, model, model_name, parametres
     # Prédiction des données et affichage des résultats
     y_pred = bayes_clf.predict(X_test)
     print(classification_report(y_test, y_pred))
-    print(confusion_matrix(y_test, y_pred))
-    print("Score bayes_clf :", bayes_clf.score(X_test, y_test))
+    confusion_heatmap(y_test, y_pred, model_name+"_grid")
+    print("Score bayes :", bayes_clf.score(X_test, y_test))
+    print("F1-score bayes :", f1_score(y_test, y_pred, average='weighted'))
 
     return bayes_clf
 
@@ -107,7 +104,7 @@ def modele_multinomialNB(X_train, X_test, y_train, y_test):
     # Prédiction des données et affichage des résultats
     y_pred = multinomialNB.predict(X_test)
     # print(classification_report(y_test, y_pred))
-    # print(confusion_matrix(y_test, y_pred))
+    confusion_heatmap(y_test, y_pred, 'multinomialNB')
     print("Score :", multinomialNB.score(X_test, y_test))
     print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
 
@@ -232,11 +229,6 @@ def modele_sgd(X_train, X_test, y_train, y_test):
     # bayes_search(X_train, X_test, y_train, y_test, sgd, 'sgd', parametres)
 
     return None
-  
-def convertir_duree(secondes):
-    minutes, secondes = divmod(secondes, 60)
-    heures, minutes = divmod(minutes, 60)
-    return heures, minutes, secondes
 
 def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid):
     
@@ -262,11 +254,9 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid):
         # Prédiction des données et affichage des résultats
         y_pred = model.predict(X_test)
         print(classification_report(y_test, y_pred))
-        conf_mat = confusion_matrix(y_test, y_pred)
-        print(conf_mat)
-        confusion_heatmap(conf_mat, model_name)
+        confusion_heatmap(y_test, y_pred, model_name)
         print("Score :", model.score(X_test, y_test))
-    else : 
+    else: 
         print("Modélisation Arbre de Décision (gridSearch)\n")
         model = DecisionTreeClassifier()
         parametres = {
@@ -276,13 +266,3 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid):
         grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     return None
-
-
-def confusion_heatmap(conf_mat, modele):
-    fig, ax = plt.subplots(figsize = (15, 15))
-    sns.heatmap(conf_mat, cmap = "coolwarm", annot=True, fmt="d")
-    plt.xlabel('Predicted')
-    plt.ylabel('Actual')
-    plt.title('Matrice de confusion :'+modele)
-    plt.savefig("reports/figures/matrice_de_confusion/matrice_confusion_heatmap_"+modele+".png", bbox_inches='tight')
-    #plt.show();

@@ -325,6 +325,7 @@ def modele_xgboost(X_train, X_test, y_train, y_test, booGrid=False):
 
 def confusion_heatmap(y_test, y_pred, modele_name):
     conf_mat = confusion_matrix(y_test, y_pred)
+    plt.figure(figsize=(15, 15)) 
     sns.heatmap(conf_mat, cmap = "coolwarm", annot=True, fmt="d")
     plt.xlabel('Predicted')
     plt.ylabel('Actual')

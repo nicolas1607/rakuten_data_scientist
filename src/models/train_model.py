@@ -4,6 +4,8 @@ import time
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
@@ -17,8 +19,6 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
 from sklearnex import patch_sklearn
-
-from toolbox import *
 
 # Intel(R) Extension for Scikit-learn
 patch_sklearn()
@@ -286,3 +286,16 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
         grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     return None
+
+def confusion_heatmap(y_test, y_pred, modele_name):
+    conf_mat = confusion_matrix(y_test, y_pred)
+    sns.heatmap(conf_mat, cmap = "coolwarm", annot=True, fmt="d")
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Matrice de confusion :'+modele_name)
+    plt.savefig("reports/figures/matrice_de_confusion/matrice_confusion_heatmap_"+modele_name+".png", bbox_inches='tight')
+
+def convertir_duree(secondes):
+    minutes, secondes = divmod(secondes, 60)
+    heures, minutes = divmod(minutes, 60)
+    return heures, minutes, secondes

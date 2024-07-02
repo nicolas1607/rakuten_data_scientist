@@ -17,9 +17,13 @@ X_train, X_test, y_train, y_test = pre_processing()
 # modele_linear_svm(X_train, X_test, y_train, y_test, True)
 
 # modele_svm(X_train, X_test, y_train, y_test)
+# pas d'optimisation car trop long à executer
 
 # modele_sgd(X_train, X_test, y_train, y_test)
 # modele_sgd(X_train, X_test, y_train, y_test, True)
 
 # modele_decisionTree(X_train, X_test, y_train, y_test)
 # modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False)
+
+# modele_xgboost(X_train, X_test, y_train, y_test)
+# pas d'optimisation car trop long à executer

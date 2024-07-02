@@ -1,9 +1,6 @@
 import os
 import pickle
 import time
-import pandas as pd
-import numpy as np
-import xgboost as xgb
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -12,9 +9,9 @@ from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, log_loss
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
@@ -137,7 +134,7 @@ def modele_complementNB(X_train, X_test, y_train, y_test, booGrid=False):
 
         y_pred = model.predict(X_test)
         print(classification_report(y_test, y_pred))
-        print(confusion_matrix(y_test, y_pred))
+        confusion_heatmap(y_test, y_pred, model_name)
         print("Score :", model.score(X_test, y_test))
         print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
 
@@ -165,7 +162,7 @@ def modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False):
 
         y_pred = model.predict(X_test)
         print(classification_report(y_test, y_pred))
-        print(confusion_matrix(y_test, y_pred))
+        confusion_heatmap(y_test, y_pred, model_name)
         print("Score :", model.score(X_test, y_test))
         print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
     
@@ -209,7 +206,7 @@ def modele_svm(X_train, X_test, y_train, y_test, booGrid=False):
 
         y_pred = model.predict(X_test)
         print(classification_report(y_test, y_pred))
-        print(confusion_matrix(y_test, y_pred))
+        confusion_heatmap(y_test, y_pred, model_name)
         print("Score :", model.score(X_test, y_test))
         print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
 
@@ -237,7 +234,7 @@ def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
 
         y_pred = model.predict(X_test)
         print(classification_report(y_test, y_pred))
-        print(confusion_matrix(y_test, y_pred))
+        confusion_heatmap(y_test, y_pred, model_name)
         print("Score :", model.score(X_test, y_test))
         print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
 
@@ -284,6 +281,45 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
             'criterion': ['gini', 'entropy']
         }
         grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+
+    return None
+
+def modele_xgboost(X_train, X_test, y_train, y_test, booGrid=False):
+
+    model_name = 'xgboost'
+
+    # Encoder les étiquettes
+    label_encoder = LabelEncoder()
+    y_train_encoded = label_encoder.fit_transform(y_train)
+    y_test_encoded = label_encoder.transform(y_test)
+
+    if (not booGrid):
+        print("Modèlisation XGBClassifier\n")
+        if os.path.exists("models/"+model_name+".pkl"):
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            model = XGBClassifier(learning_rate=0.1, objective='multi:softmax', num_class=27, random_state=123)
+            model.fit(X_train, y_train_encoded)
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+
+            y_pred = model.predict(X_test)
+            print(classification_report(y_test_encoded, y_pred))
+            confusion_heatmap(y_test_encoded, y_pred, model_name)
+            print("Score :", model.score(X_test, y_test_encoded))
+            print("F1-score :", f1_score(y_test_encoded, y_pred, average='weighted'))
+
+    else:
+
+        print("Modèlisation XGBClassifier (gridSearch)\n")
+        model = XGBClassifier(learning_rate=0.1, objective='multi:softmax', num_class=27, random_state=123)
+        parametres = {
+            'min_child_weight': [1, 5, 10],
+            'gamma': [0.5, 1, 1.5, 2, 5],
+            # 'subsample': [0.6, 0.8, 1.0],
+            # 'colsample_bytree': [0.6, 0.8, 1.0],
+            'max_depth': [3, 4, 5]
+        }
+        bayes_search(X_train, X_test, y_train_encoded, y_test_encoded, model, model_name, parametres)
 
     return None
 

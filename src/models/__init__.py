@@ -7,8 +7,10 @@ X_train, X_test, y_train, y_test = pre_processing()
 # Modélisation de base
 # modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False)
 
-# modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False)
-# modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=True)
+# multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False)
+# multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=True)
+# multinomialNB_boosting = boosting(X_train, X_test, y_train, y_test, multinomialNB, 'multinomialNB', booGrid=False)
+# multinomialNB_bagging = bagging(X_train, X_test, y_train, y_test, multinomialNB, 'multinomialNB', booGrid=False)
 
 # modele_complementNB(X_train, X_test, y_train, y_test, booGrid=False)
 # modele_complementNB(X_train, X_test, y_train, y_test, booGrid=True)

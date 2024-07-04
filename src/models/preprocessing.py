@@ -180,7 +180,11 @@ def pre_processing(tokenizer_name=None):
         nuage_de_mots(df_result)
 
     print("Ré-échantillonnage du jeu de donnée\n")
-    X_train, X_test, y_train, y_test = train_test_split(df['tokens'], df['prdtypecode'], test_size=0.2, random_state=66)
+    if tokenizer_name != 'bert':
+        X_train, X_test, y_train, y_test = train_test_split(df['tokens'], df['prdtypecode'], test_size=0.2, random_state=66)
+    else:
+        df = df.sample(frac=0.005, random_state=66) # réduire le jeu de donnée pour réaliser des tests
+        X_train, X_test, y_train, y_test = train_test_split(df['descriptif_cleaned'], df['prdtypecode'], test_size=0.2, random_state=66)
 
     print("Vectorisation de la colonne descriptif\n")
     if tokenizer_name != 'bert':

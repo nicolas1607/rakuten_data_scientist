@@ -1,9 +1,6 @@
 import os
 import pickle
 import time
-import pandas as pd
-import numpy as np
-import xgboost as xgb
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -12,7 +9,9 @@ from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
+from lightgbm import LGBMClassifier
 
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
 from sklearn.preprocessing import LabelEncoder
@@ -23,9 +22,18 @@ from sklearnex import patch_sklearn
 # Intel(R) Extension for Scikit-learn
 patch_sklearn()
 
+def get_predictions(X_test, y_test, model, model_name):
+
+    y_pred = model.predict(X_test)
+    print(classification_report(y_test, y_pred))
+    confusion_heatmap(y_test, y_pred, model_name+"_grid")
+    print("Score :", model.score(X_test, y_test))
+    print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
+
+    return None
+
 def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres):
     
-    # Créer ou charger la grille de recherche
     filename = "models/" + model_name + "_grid.pkl"
     if os.path.exists(filename):
         grid_clf = pickle.load(open(filename, "rb"))
@@ -38,42 +46,81 @@ def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
         print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
         pickle.dump(grid_clf, open(filename, "wb"))
 
-    # Afficher les meilleurs paramètres de la grille pour notre modèle
     print("Les meilleurs paramètres de la grille :", grid_clf.best_params_)
-    #print("depth atteinte :", grid_clf.tree_.max_depth)
 
-    # Prédiction des données et affichage des résultats
-    y_pred = grid_clf.predict(X_test)
-    print(classification_report(y_test, y_pred))
-    confusion_heatmap(y_test, y_pred, model_name+"_grid")
-    print("Score grid :", grid_clf.score(X_test, y_test))
-    print("F1-score grid :", f1_score(y_test, y_pred, average='weighted'))
+    get_predictions(X_test, y_test, grid_clf, model_name)
 
-    return grid_clf
+    model.set_params(**grid_clf.best_params_)
+    model.fit(X_train, y_train)
+
+    return model
 
 def bayes_search(X_train, X_test, y_train, y_test, model, model_name, parametres):
 
 
-    # Créer ou charger la grille de recherche
     filename = "models/" + model_name + "_bayes.pkl"
     if os.path.exists(filename):
         bayes_clf = pickle.load(open(filename, "rb"))
     else:
+        start_time = time.time()
         bayes_clf = BayesSearchCV(estimator=model, search_spaces=parametres, n_iter=32, cv=3, verbose=1, n_jobs=-1)
         bayes_clf.fit(X_train, y_train)
+        end_time = time.time()
+        heures, minutes, secondes = convertir_duree(end_time - start_time)
+        print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
         pickle.dump(bayes_clf, open(filename, "wb"))
 
-    # Afficher les meilleurs paramètres de la grille pour notre modèle
-    print(bayes_clf.best_params_)
+    print("Les meilleurs paramètres de la grille :", bayes_clf.best_params_)
 
-    # Prédiction des données et affichage des résultats
-    y_pred = bayes_clf.predict(X_test)
-    print(classification_report(y_test, y_pred))
-    confusion_heatmap(y_test, y_pred, model_name+"_grid")
-    print("Score bayes :", bayes_clf.score(X_test, y_test))
-    print("F1-score bayes :", f1_score(y_test, y_pred, average='weighted'))
+    get_predictions(X_test, y_test, bayes_clf, model_name)
 
-    return bayes_clf
+    model.set_params(**bayes_clf.best_params_)
+    model.fit(X_train, y_train)
+
+    return model
+
+def boosting(X_train, X_test, y_train, y_test, model, model_name, booGrid=False):
+
+    model_name = model_name + "_boosting"
+
+    print("Création et entrainement du booster\n")   
+    boosting = AdaBoostClassifier(estimator=model, algorithm='SAMME', random_state=123)
+
+    if (not booGrid):
+        boosting.set_params(learning_rate=0.1, n_estimators=100)
+        boosting.fit(X_train, y_train)
+    else:
+        parametres = {
+            'learning_rate': [0.001, 0.01, 0.1],
+            'n_estimators': [100, 200, 500, 1000],
+        }
+        boosting = grid_search(X_train, X_test, y_train, y_test, boosting, model_name, parametres)
+
+    get_predictions(X_test, y_test, boosting, model_name)
+
+    return None
+
+def bagging(X_train, X_test, y_train, y_test, model, model_name, booGrid=False):
+    
+    model_name = model_name + "_bagging"
+
+    print("Création et entrainement du bagging\n")   
+    bagging = BaggingClassifier(estimator=model, random_state=123)
+
+    if (not booGrid):
+        bagging.set_params(n_estimators=100)
+        bagging.fit(X_train, y_train)
+    else:
+        parametres = {
+            'n_estimators': [100, 200, 500, 1000],
+            'max_samples': [0.5, 1.0],
+            'max_features': [0.5, 1.0],
+        }
+        bagging = grid_search(X_train, X_test, y_train, y_test, bagging, model_name, parametres)
+
+    get_predictions(X_test, y_test, bagging, model_name)
+
+    return None
 
 def modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False):
     
@@ -140,21 +187,14 @@ def modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False):
             model = MultinomialNB()
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
-
-        y_pred = model.predict(X_test)
-        print(classification_report(y_test, y_pred))
-        confusion_heatmap(y_test, y_pred, model_name)
-        print("Score :", model.score(X_test, y_test))
-        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-    
+        get_predictions(X_test, y_test, model, model_name)
     else:
-
         print("Modèlisation MultinomialNB (gridSearch)\n")
         model = MultinomialNB()
         parametres = {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]}
-        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
-    return None
+    return model
 
 def modele_complementNB(X_train, X_test, y_train, y_test, booGrid=False):
     
@@ -168,21 +208,14 @@ def modele_complementNB(X_train, X_test, y_train, y_test, booGrid=False):
             model = ComplementNB()
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
-
-        y_pred = model.predict(X_test)
-        print(classification_report(y_test, y_pred))
-        print(confusion_matrix(y_test, y_pred))
-        print("Score :", model.score(X_test, y_test))
-        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-
+        get_predictions(X_test, y_test, model, model_name)
     else:
-
         print("Modèlisation ComplementNB (gridSearch)\n")
         model = ComplementNB()
         parametres = {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]}
-        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
-    return None
+    return model
 
 def modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False):
 
@@ -196,37 +229,14 @@ def modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False):
             model = LinearSVC()
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
-
-        y_pred = model.predict(X_test)
-        print(classification_report(y_test, y_pred))
-        print(confusion_matrix(y_test, y_pred))
-        print("Score :", model.score(X_test, y_test))
-        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-    
+        get_predictions(X_test, y_test, model, model_name)
     else:
-        
         print("Modèlisation Linear SVM (gridSearch)\n")
         model = LinearSVC()
         parametres = {'C': (1e-6, 1e+6, 'log-uniform'), 'max_iter': (1000, 10000)}
-        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
-    # Créer et entraîner un booster
-    # ac = AdaBoostClassifier(estimator=linear_svm, n_estimators=400, algorithm='SAMME', random_state=123)
-    # ac.fit(X_train, y_train)
-    # pickle.dump(linear_svm, open("models/linear_svm_adaboost.pkl", "wb"))
-    # y_pred = ac.predict(X_test)
-    # print("Score boosting :", ac.score(X_test, y_test))
-    # print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-
-    # Créer et entraîner un bagging
-    # bc = BaggingClassifier(estimator=linear_svm, n_estimators=400, oob_score=True, random_state=123)
-    # bc.fit(X_train, y_train)
-    # pickle.dump(linear_svm, open("models/linear_svm_bagging.pkl", "wb"))
-    # y_pred = bc.predict(X_test)
-    # print("Score bagging :", bc.score(X_test, y_test))
-    # print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-
-    return None
+    return model
 
 def modele_svm(X_train, X_test, y_train, y_test, booGrid=False):
 
@@ -240,21 +250,14 @@ def modele_svm(X_train, X_test, y_train, y_test, booGrid=False):
             model = SVC()
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
-
-        y_pred = model.predict(X_test)
-        print(classification_report(y_test, y_pred))
-        print(confusion_matrix(y_test, y_pred))
-        print("Score :", model.score(X_test, y_test))
-        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-
+        get_predictions(X_test, y_test, model, model_name)
     else:
-
         print("Modèlisation SVM (gridSearch)\n")
         model = SVC()
         parametres = {'C': (1e-6, 1e+6, 'log-uniform'), 'gamma': (1e-6, 1e+1, 'log-uniform'), 'degree': (1, 8)}
-        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
-    return None
+    return model
 
 def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
 
@@ -268,21 +271,14 @@ def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
             model = SGDClassifier()
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
-
-        y_pred = model.predict(X_test)
-        print(classification_report(y_test, y_pred))
-        print(confusion_matrix(y_test, y_pred))
-        print("Score :", model.score(X_test, y_test))
-        print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-
+        get_predictions(X_test, y_test, model, model_name)
     else:
-
         print("Modèlisation SGDClassifier (gridSearch)\n")
         model = SGDClassifier()
         parametres = {'loss': ['hinge', 'log_loss', 'modified_huber', 'squared_hinge', 'perceptron'], 'penalty': ['l2', 'l1', 'elasticnet'], 'alpha': [0.0001, 0.001, 0.01], 'max_iter': [1000, 2000, 3000, 5000, 10000]}
-        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
-    return None
+    return model
 
 def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
     
@@ -303,13 +299,8 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
             heures, minutes, secondes = convertir_duree(end_time - start_time)
             print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
-
         print("depth atteinte :", model.tree_.max_depth)
-        # Prédiction des données et affichage des résultats
-        y_pred = model.predict(X_test)
-        print(classification_report(y_test, y_pred))
-        confusion_heatmap(y_test, y_pred, model_name)
-        print("Score :", model.score(X_test, y_test))
+        get_predictions(X_test, y_test, model, model_name)
     else: 
         print("Modélisation Arbre de Décision (gridSearch)\n")
         model = DecisionTreeClassifier()
@@ -317,14 +308,46 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
             #'max_depth': [4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 30, 40, 50, 70, 90, 120, 150],
             'criterion': ['gini', 'entropy']
         }
-        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
-    return None
+    return model
+
+def modele_xgboost(X_train, X_test, y_train, y_test, booGrid=False):
+
+    model_name = 'xgboost'
+
+    label_encoder = LabelEncoder()
+    y_train_encoded = label_encoder.fit_transform(y_train)
+    y_test_encoded = label_encoder.transform(y_test)
+
+    if (not booGrid):
+        print("Modèlisation XGBClassifier\n")
+        if os.path.exists("models/"+model_name+".pkl"):
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            model = XGBClassifier(learning_rate=0.1, objective='multi:softmax', num_class=27, random_state=123)
+            model.fit(X_train, y_train_encoded)
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+        get_predictions(X_test, y_test, model, model_name)
+    else:
+        print("Modèlisation XGBClassifier (gridSearch)\n")
+        model = XGBClassifier(learning_rate=0.1, objective='multi:softmax', num_class=27, random_state=123)
+        parametres = {
+            'min_child_weight': [1, 5, 10],
+            'gamma': [0.5, 1, 1.5, 2, 5],
+            # 'subsample': [0.6, 0.8, 1.0],
+            # 'colsample_bytree': [0.6, 0.8, 1.0],
+            'max_depth': [3, 4, 5]
+        }
+        model = bayes_search(X_train, X_test, y_train_encoded, y_test_encoded, model, model_name, parametres)
+
+    return model
 
 def confusion_heatmap(y_test, y_pred, modele_name):
     
     conf_mat = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(15, 15))
+    plt.figure(figsize=(15, 15)) 
     sns.heatmap(conf_mat, cmap = "coolwarm", annot=True, fmt="d")
    
     plt.xlabel('Predicted')

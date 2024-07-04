@@ -18,9 +18,11 @@ from deep_translator import GoogleTranslator
 from wordcloud import WordCloud
 from PIL import Image
 from tqdm import tqdm
+
 nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('punkt')
+
 tqdm.pandas()
 
 DetectorFactory.seed = 0
@@ -119,7 +121,7 @@ def translate(texte):
         texte = GoogleTranslator(source=detect(texte), target='fr').translate(texte)
     return texte
 
-def pre_processing():
+def pre_processing(tokenizer_name=None):
 
     # print("Pre-processing des images\n")
     # pre_processing_image()
@@ -162,12 +164,15 @@ def pre_processing():
         df.to_csv('data/df_lemmatized.csv')
 
     print("Tokenisation de la colonne descriptif\n")
-    if os.path.exists("data/df_tokenized.csv"):
-        df = pd.read_csv('data/df_tokenized.csv')
-        df = df.fillna('')
-    else:
-        df['tokens'] = df['descriptif_cleaned'].progress_apply(word_tokenize)
-        df.to_csv('data/df_tokenized.csv')
+    if tokenizer_name != 'bert':
+        if os.path.exists("data/df_tokenized.csv"):
+            df = pd.read_csv('data/df_tokenized.csv')
+            df = df.fillna('')
+        else:
+            df['tokens'] = df['descriptif_cleaned'].progress_apply(word_tokenize)
+            df.to_csv('data/df_tokenized.csv')
+            df = pd.read_csv('data/df_tokenized.csv')
+            df = df.fillna('')
 
     print("Nuage de mots pour les 27 catégories\n")
     if len(os.listdir('reports/figures/nuage_de_mot')) == 0:
@@ -178,9 +183,10 @@ def pre_processing():
     X_train, X_test, y_train, y_test = train_test_split(df['tokens'], df['prdtypecode'], test_size=0.2, random_state=66)
 
     print("Vectorisation de la colonne descriptif\n")
-    vectorizer = TfidfVectorizer()
-    X_train = vectorizer.fit_transform(X_train)
-    X_test = vectorizer.transform(X_test)
+    if tokenizer_name != 'bert':
+        vectorizer = TfidfVectorizer()
+        X_train = vectorizer.fit_transform(X_train)
+        X_test = vectorizer.transform(X_test)
 
     return X_train, X_test, y_train, y_test
 

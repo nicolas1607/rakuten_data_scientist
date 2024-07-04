@@ -18,8 +18,9 @@ from deep_translator import GoogleTranslator
 from wordcloud import WordCloud
 from PIL import Image
 from tqdm import tqdm
-
-#### !! nltk.download('wordnet')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt')
 tqdm.pandas()
 
 DetectorFactory.seed = 0

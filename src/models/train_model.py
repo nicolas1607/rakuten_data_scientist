@@ -57,6 +57,7 @@ def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
 def bayes_search(X_train, X_test, y_train, y_test, model, model_name, parametres):
 
+
     filename = "models/" + model_name + "_bayes.pkl"
     if os.path.exists(filename):
         bayes_clf = pickle.load(open(filename, "rb"))
@@ -121,25 +122,58 @@ def bagging(X_train, X_test, y_train, y_test, model, model_name, booGrid=False):
 
     return None
 
-def modele_regression_logistique(X_train, X_test, y_train, y_test):
+def modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False):
     
-    print("Modèlisation Logistic Regression\n")
+    model_name = 'regression_logistique'
+    
+    if (not booGrid):
+        print("Modélisation regression logistique (hors gridSearch)\n")
 
-    # Créer ou charger le modèle
+        # Créer ou charger le modèle
+        if os.path.exists("models/"+model_name+".pkl"):
+            print("Chargement du modèle sauvegardé")
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            start_time = time.time()
+            model = LogisticRegression()
+            model.fit(X_train, y_train)
+            end_time = time.time()
+            heures, minutes, secondes = convertir_duree(end_time - start_time)
+            print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+
+        # Prédiction des données et affichage des résultats
+        y_pred = model.predict(X_test)
+        print(classification_report(y_test, y_pred))
+        confusion_heatmap(y_test, y_pred, model_name)
+        print("Score :", model.score(X_test, y_test))
+    else: 
+        print("Modélisation regression_logistique (gridSearch)\n")
+        model = LogisticRegression()
+        parametres = {'C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],
+                      'max_iter': [100, 200, 300, 500, 1000]
+            
+        }
+        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+
+    return None
+#def modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False):
+    
+    model_name = 'regression_logistique'
     if os.path.exists("models/logistic_regression.pkl"):
         model = pickle.load(open("models/logistic_regression.pkl", "rb"))
     else:
-        model = LogisticRegression(C=0.1, max_iter=10000, random_state=123)
+        model = LogisticRegression()
         model.fit(X_train, y_train)
         pickle.dump(model, open("models/logistic_regression.pkl", "wb"))
-    
-    # Prédiction des données et affichage des résultats
+
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
+    confusion_heatmap(y_test, y_pred, model_name)
     print("Score :", accuracy)
     print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
     
-    return model, accuracy
+    return None
 
 def modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False):
     
@@ -310,9 +344,12 @@ def modele_xgboost(X_train, X_test, y_train, y_test, booGrid=False):
     return model
 
 def confusion_heatmap(y_test, y_pred, modele_name):
+    
     conf_mat = confusion_matrix(y_test, y_pred)
+    plt.figure(figsize=(15, 15))
     plt.figure(figsize=(15, 15)) 
     sns.heatmap(conf_mat, cmap = "coolwarm", annot=True, fmt="d")
+   
     plt.xlabel('Predicted')
     plt.ylabel('Actual')
     plt.title('Matrice de confusion :'+modele_name)

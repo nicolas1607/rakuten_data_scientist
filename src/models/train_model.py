@@ -9,6 +9,7 @@ from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
 
@@ -244,6 +245,33 @@ def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
         model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return model
+
+def modele_knn_neighbors(X_train, X_test, y_train, y_test, booGrid=False):
+
+    model_name = 'knn_neighbors'
+
+    if (not booGrid):
+        print("Modélisation Knn \n")
+        if os.path.exists("models/"+model_name+".pkl"):
+            print("Chargement du modèle sauvegardé")
+            model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        else:
+            start_time = time.time()
+            model = KNeighborsClassifier()
+            model.fit(X_train,y_train)
+            end_time = time.time()
+            heures, minutes, secondes = convertir_duree(end_time - start_time)
+            print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
+            pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+        get_predictions(X_test, y_test, model, model_name)
+        # print("best_model=", compare_models())
+    else: 
+        print("Modélisation du Knn \n")
+        model = KNeighborsClassifier()
+        parametres = {'n_neighbors': [4, 5, 6]}
+        optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres)
+
+    return None
 
 def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
     

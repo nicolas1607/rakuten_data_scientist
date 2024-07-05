@@ -11,9 +11,8 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
-from lightgbm import LGBMClassifier
 
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
@@ -26,55 +25,33 @@ def get_predictions(X_test, y_test, model, model_name):
 
     y_pred = model.predict(X_test)
     print(classification_report(y_test, y_pred))
-    confusion_heatmap(y_test, y_pred, model_name+"_grid")
+    confusion_heatmap(y_test, y_pred, model_name)
     print("Score :", model.score(X_test, y_test))
     print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
 
     return None
 
-def grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres):
-    
-    filename = "models/" + model_name + "_grid.pkl"
+def optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, type='grid'):
+    filename = "models/" + model_name + "_" + type + ".pkl"
     if os.path.exists(filename):
-        grid_clf = pickle.load(open(filename, "rb"))
+        search = pickle.load(open(filename, "rb"))
     else:
         start_time = time.time()
-        grid_clf = GridSearchCV(estimator=model, param_grid=parametres, n_jobs=-1, cv=3, verbose=1)
-        grid_clf.fit(X_train, y_train)
+        if type == 'grid':
+            search = GridSearchCV(estimator=model, param_grid=parametres, n_jobs=-1, cv=3, verbose=1)
+        else:
+            search = BayesSearchCV(estimator=model, search_spaces=parametres, n_iter=32, cv=3, verbose=1, n_jobs=-1)
+        search.fit(X_train, y_train)
         end_time = time.time()
         heures, minutes, secondes = convertir_duree(end_time - start_time)
         print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
-        pickle.dump(grid_clf, open(filename, "wb"))
+        pickle.dump(search, open(filename, "wb"))
 
-    print("Les meilleurs paramètres de la grille :", grid_clf.best_params_)
+    print("Les meilleurs paramètres de la grille :", search.best_params_)
 
-    get_predictions(X_test, y_test, grid_clf, model_name)
+    get_predictions(X_test, y_test, search, model_name)
 
-    model.set_params(**grid_clf.best_params_)
-    model.fit(X_train, y_train)
-
-    return model
-
-def bayes_search(X_train, X_test, y_train, y_test, model, model_name, parametres):
-
-
-    filename = "models/" + model_name + "_bayes.pkl"
-    if os.path.exists(filename):
-        bayes_clf = pickle.load(open(filename, "rb"))
-    else:
-        start_time = time.time()
-        bayes_clf = BayesSearchCV(estimator=model, search_spaces=parametres, n_iter=32, cv=3, verbose=1, n_jobs=-1)
-        bayes_clf.fit(X_train, y_train)
-        end_time = time.time()
-        heures, minutes, secondes = convertir_duree(end_time - start_time)
-        print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
-        pickle.dump(bayes_clf, open(filename, "wb"))
-
-    print("Les meilleurs paramètres de la grille :", bayes_clf.best_params_)
-
-    get_predictions(X_test, y_test, bayes_clf, model_name)
-
-    model.set_params(**bayes_clf.best_params_)
+    model.set_params(**search.best_params_)
     model.fit(X_train, y_train)
 
     return model
@@ -83,18 +60,22 @@ def boosting(X_train, X_test, y_train, y_test, model, model_name, booGrid=False)
 
     model_name = model_name + "_boosting"
 
-    print("Création et entrainement du booster\n")   
+    print("Création et entrainement du boosting\n")   
     boosting = AdaBoostClassifier(estimator=model, algorithm='SAMME', random_state=123)
 
     if (not booGrid):
-        boosting.set_params(learning_rate=0.1, n_estimators=100)
+        start_time = time.time()
+        boosting.set_params(learning_rate=0.01, n_estimators=100)
         boosting.fit(X_train, y_train)
+        end_time = time.time()
+        heures, minutes, secondes = convertir_duree(end_time - start_time)
+        print("Temps d'entrainement du boosting :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
     else:
         parametres = {
             'learning_rate': [0.001, 0.01, 0.1],
             'n_estimators': [100, 200, 500, 1000],
         }
-        boosting = grid_search(X_train, X_test, y_train, y_test, boosting, model_name, parametres)
+        boosting = optimisation(X_train, X_test, y_train, y_test, boosting, model_name, parametres, 'grid')
 
     get_predictions(X_test, y_test, boosting, model_name)
 
@@ -108,15 +89,19 @@ def bagging(X_train, X_test, y_train, y_test, model, model_name, booGrid=False):
     bagging = BaggingClassifier(estimator=model, random_state=123)
 
     if (not booGrid):
+        start_time = time.time()
         bagging.set_params(n_estimators=100)
         bagging.fit(X_train, y_train)
+        end_time = time.time()
+        heures, minutes, secondes = convertir_duree(end_time - start_time)
+        print("Temps d'entrainement du boosting :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
     else:
         parametres = {
             'n_estimators': [100, 200, 500, 1000],
             'max_samples': [0.5, 1.0],
             'max_features': [0.5, 1.0],
         }
-        bagging = grid_search(X_train, X_test, y_train, y_test, bagging, model_name, parametres)
+        bagging = optimisation(X_train, X_test, y_train, y_test, bagging, model_name, parametres, 'grid')
 
     get_predictions(X_test, y_test, bagging, model_name)
 
@@ -150,29 +135,9 @@ def modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False
     else: 
         print("Modélisation regression_logistique (gridSearch)\n")
         model = LogisticRegression()
-        parametres = {'C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],
-                      'max_iter': [100, 200, 300, 500, 1000]
-            
-        }
-        grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        parametres = {'C': [0.001, 0.01, 0.1, 1, 10, 100, 1000], 'max_iter': [100, 200, 300, 500, 1000]}
+        optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
-    return None
-#def modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False):
-    
-    model_name = 'regression_logistique'
-    if os.path.exists("models/logistic_regression.pkl"):
-        model = pickle.load(open("models/logistic_regression.pkl", "rb"))
-    else:
-        model = LogisticRegression()
-        model.fit(X_train, y_train)
-        pickle.dump(model, open("models/logistic_regression.pkl", "wb"))
-
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    confusion_heatmap(y_test, y_pred, model_name)
-    print("Score :", accuracy)
-    print("F1-score :", f1_score(y_test, y_pred, average='weighted'))
-    
     return None
 
 def modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False):
@@ -192,7 +157,7 @@ def modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False):
         print("Modèlisation MultinomialNB (gridSearch)\n")
         model = MultinomialNB()
         parametres = {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]}
-        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return model
 
@@ -213,7 +178,7 @@ def modele_complementNB(X_train, X_test, y_train, y_test, booGrid=False):
         print("Modèlisation ComplementNB (gridSearch)\n")
         model = ComplementNB()
         parametres = {'alpha':[x / 10 for x in range(1, 11, 1)], 'force_alpha':[True,False], 'fit_prior':[True,False]}
-        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return model
 
@@ -234,7 +199,7 @@ def modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False):
         print("Modèlisation Linear SVM (gridSearch)\n")
         model = LinearSVC()
         parametres = {'C': (1e-6, 1e+6, 'log-uniform'), 'max_iter': (1000, 10000)}
-        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return model
 
@@ -255,7 +220,7 @@ def modele_svm(X_train, X_test, y_train, y_test, booGrid=False):
         print("Modèlisation SVM (gridSearch)\n")
         model = SVC()
         parametres = {'C': (1e-6, 1e+6, 'log-uniform'), 'gamma': (1e-6, 1e+1, 'log-uniform'), 'degree': (1, 8)}
-        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return model
 
@@ -276,13 +241,14 @@ def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
         print("Modèlisation SGDClassifier (gridSearch)\n")
         model = SGDClassifier()
         parametres = {'loss': ['hinge', 'log_loss', 'modified_huber', 'squared_hinge', 'perceptron'], 'penalty': ['l2', 'l1', 'elasticnet'], 'alpha': [0.0001, 0.001, 0.01], 'max_iter': [1000, 2000, 3000, 5000, 10000]}
-        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return model
 
 def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
     
     model_name = 'decisionTree'
+    if (booGrid): model_name += "_grid"
     
     if (not booGrid):
         print("Modélisation Arbre de Décision (hors gridSearch)\n")
@@ -308,7 +274,7 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
             #'max_depth': [4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 30, 40, 50, 70, 90, 120, 150],
             'criterion': ['gini', 'entropy']
         }
-        model = grid_search(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return model
 
@@ -339,7 +305,7 @@ def modele_xgboost(X_train, X_test, y_train, y_test, booGrid=False):
             # 'colsample_bytree': [0.6, 0.8, 1.0],
             'max_depth': [3, 4, 5]
         }
-        model = bayes_search(X_train, X_test, y_train_encoded, y_test_encoded, model, model_name, parametres)
+        model = optimisation(X_train, X_test, y_train_encoded, y_test_encoded, model, model_name, parametres, type='bayes')
 
     return model
 

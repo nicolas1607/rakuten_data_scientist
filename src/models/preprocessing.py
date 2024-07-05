@@ -18,6 +18,9 @@ from deep_translator import GoogleTranslator
 from wordcloud import WordCloud
 from PIL import Image
 from tqdm import tqdm
+from scipy import sparse
+from imblearn.over_sampling import ADASYN
+from imblearn.under_sampling import EditedNearestNeighbours
 
 nltk.download('stopwords')
 nltk.download('wordnet')
@@ -121,6 +124,32 @@ def translate(texte):
         texte = GoogleTranslator(source=detect(texte), target='fr').translate(texte)
     return texte
 
+def resample_data(X_train, y_train, booOverSampling):   
+    
+    print("Dimensions avant ré-échantillonnage:")
+    print("X_train=", X_train.shape)
+    print("y_train=", y_train.shape)
+
+    if (not booOverSampling):                
+        LibMethode = "sous-échantillonnage"
+        r_ech = EditedNearestNeighbours()
+    else:
+        LibMethode = "sur-échantillonnage"
+        r_ech = ADASYN()
+    
+    print("\nMéthode de", LibMethode,":", r_ech)
+    
+    X_train, y_train = r_ech.fit_resample(X_train, y_train)
+    sparse.save_npz("data/X_train_sampled.npz", X_train)
+    y_train.to_csv('data/y_train_sampled.csv', index=False)
+
+    print("\Dimensions après ré-échantillonnage")
+    print("X_train_r=", X_train.shape)
+    print("y_train_r=", y_train.shape)
+    print()
+
+    return X_train, y_train
+
 def pre_processing(tokenizer_name=None):
 
     # print("Pre-processing des images\n")
@@ -179,7 +208,9 @@ def pre_processing(tokenizer_name=None):
         df_result = word_occurence_by_prdtypecode(df)
         nuage_de_mots(df_result)
 
-    print("Ré-échantillonnage du jeu de donnée\n")
+    # df = df.sample(frac=0.1, random_state=66) # réduire le jeu de donnée pour réaliser des tests
+
+    print("Répartition Train/Test du jeu de donnée\n")
     if tokenizer_name != 'bert':
         X_train, X_test, y_train, y_test = train_test_split(df['tokens'], df['prdtypecode'], test_size=0.2, random_state=66)
     else:
@@ -191,6 +222,13 @@ def pre_processing(tokenizer_name=None):
         vectorizer = TfidfVectorizer()
         X_train = vectorizer.fit_transform(X_train)
         X_test = vectorizer.transform(X_test)
+    
+    print("Ré-échantillonnage du jeu de donnée\n")
+    if os.path.exists('data/X_train_sampled.npz') and os.path.exists('data/y_train_sampled.csv') :
+        X_train = sparse.load_npz("data/X_train_sampled.npz")
+        y_train = pd.read_csv('data/y_train_sampled.csv')
+    else:
+        X_train, y_train = resample_data(X_train, y_train, booOverSampling=True)
 
     return X_train, X_test, y_train, y_test
 

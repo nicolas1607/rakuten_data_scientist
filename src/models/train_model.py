@@ -12,7 +12,7 @@ from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
 
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
@@ -32,7 +32,6 @@ def get_predictions(X_test, y_test, model, model_name):
     return None
 
 def optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, type='grid'):
-
     filename = "models/" + model_name + "_" + type + ".pkl"
     if os.path.exists(filename):
         search = pickle.load(open(filename, "rb"))
@@ -249,6 +248,7 @@ def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
 def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
     
     model_name = 'decisionTree'
+    if (booGrid): model_name += "_grid"
     
     if (not booGrid):
         print("Modélisation Arbre de Décision (hors gridSearch)\n")

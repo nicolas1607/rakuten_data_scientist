@@ -166,4 +166,4 @@ cython_debug/
 data/
 
 # Model folder
-models/*.pkl
+models/

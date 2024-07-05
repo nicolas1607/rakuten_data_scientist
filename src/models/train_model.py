@@ -38,10 +38,10 @@ def optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres
     else:
         start_time = time.time()
         if type == 'grid':
-            search = GridSearchCV(estimator=model, param_grid=parametres, n_jobs=-1, cv=3, verbose=1)
+            search = GridSearchCV(estimator=model, param_grid=parametres, n_jobs=-1, cv=3)
         else:
             search = BayesSearchCV(estimator=model, search_spaces=parametres, n_iter=32, cv=3, verbose=1, n_jobs=-1)
-        search.fit(X_train, y_train)
+        search.fit(X_train, y_train.values.ravel())
         end_time = time.time()
         heures, minutes, secondes = convertir_duree(end_time - start_time)
         print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
@@ -52,7 +52,7 @@ def optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres
     get_predictions(X_test, y_test, search, model_name)
 
     model.set_params(**search.best_params_)
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train.values.ravel())
 
     return model
 

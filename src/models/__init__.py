@@ -6,8 +6,10 @@ from bert_model import *
 X_train, X_test, y_train, y_test = pre_processing()
 
 # Modélisation de base
-# modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False)
+# LR=modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False)
 # modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=True)
+# LR_boosting = boosting(X_train, X_test, y_train, y_test, LR, 'regression_logistique', booGrid=True)
+
 
 # multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False)
 # multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=True)
@@ -24,7 +26,7 @@ X_train, X_test, y_train, y_test = pre_processing()
 # linearSVM_boosting = boosting(X_train, X_test, y_train, y_test, linearSVM, 'linearSVM', booGrid=False)
 # linearSVM_bagging = bagging(X_train, X_test, y_train, y_test, linearSVM, 'linearSVM', booGrid=False)
 
-# sgd = modele_sgd(X_train, X_test, y_train, y_test, booGrid=False)
+sgd = modele_sgd(X_train, X_test, y_train, y_test, booGrid=False)
 # sgd = modele_sgd(X_train, X_test, y_train, y_test, booGrid=True)
 # sgd_boosting = boosting(X_train, X_test, y_train, y_test, sgd, 'sgd', booGrid=False)
 # sgd_bagging = bagging(X_train, X_test, y_train, y_test, sgd, 'sgd', booGrid=False)

@@ -108,12 +108,12 @@ def bagging(X_train, X_test, y_train, y_test, model, model_name, booGrid=False):
 
     return None
 
-def modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False):
+def modele_Logistic_Regression(X_train, X_test, y_train, y_test, booGrid=False):
     
-    model_name = 'regression_logistique'
+    model_name = 'Logistic_Regression'
     
     if (not booGrid):
-        print("Modélisation regression logistique (hors gridSearch)\n")
+        print("Modélisation Logistic Regression (hors gridSearch)\n")
         if os.path.exists("models/"+model_name+".pkl"):
             print("Chargement du modèle sauvegardé")
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
@@ -123,7 +123,7 @@ def modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
     else: 
-        print("Modélisation regression_logistique (gridSearch)\n")
+        print("Modélisation Logistic Regression (gridSearch)\n")
         model = LogisticRegression()
         parametres = {'C': [0.001, 0.01, 0.1, 1, 10, 100, 1000], 'max_iter': [100, 200, 300, 500, 1000]}
         model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')

@@ -6,8 +6,10 @@ from bert_model import *
 X_train, X_test, y_train, y_test = pre_processing()
 
 # Modélisation de base
-# modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False)
-# modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=True)
+Logistic_Regression = modele_Logistic_Regression(X_train, X_test, y_train, y_test, booGrid=False)
+# Logistic_Regression = modele_Logistic_Regression(X_train, X_test, y_train, y_test, booGrid=True)
+# Logistic_Regression_boosting = boosting(X_train, X_test, y_train, y_test, Logistic_Regression, 'Logistic_Regression', booGrid=False)
+# Logistic_Regression_bagging = bagging(X_train, X_test, y_train, y_test, Logistic_Regression, 'Logistic_Regression', booGrid=False)
 
 # multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False)
 # multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=True)

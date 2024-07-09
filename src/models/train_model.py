@@ -108,36 +108,25 @@ def bagging(X_train, X_test, y_train, y_test, model, model_name, booGrid=False):
 
     return None
 
-def modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False):
+def modele_Logistic_Regression(X_train, X_test, y_train, y_test, booGrid=False):
     
-    model_name = 'regression_logistique'
+    model_name = 'Logistic_Regression'
     
     if (not booGrid):
-        print("Modélisation regression logistique (hors gridSearch)\n")
-
-        # Créer ou charger le modèle
+        print("Modélisation Logistic Regression (hors gridSearch)\n")
         if os.path.exists("models/"+model_name+".pkl"):
             print("Chargement du modèle sauvegardé")
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
-            start_time = time.time()
             model = LogisticRegression()
             model.fit(X_train, y_train)
-            end_time = time.time()
-            heures, minutes, secondes = convertir_duree(end_time - start_time)
-            print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
-
-        # Prédiction des données et affichage des résultats
-        y_pred = model.predict(X_test)
-        print(classification_report(y_test, y_pred))
-        confusion_heatmap(y_test, y_pred, model_name)
-        print("Score :", model.score(X_test, y_test))
+        get_predictions(X_test, y_test, model, model_name)
     else: 
-        print("Modélisation regression_logistique (gridSearch)\n")
+        print("Modélisation Logistic Regression (gridSearch)\n")
         model = LogisticRegression()
         parametres = {'C': [0.001, 0.01, 0.1, 1, 10, 100, 1000], 'max_iter': [100, 200, 300, 500, 1000]}
-        optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres)
+        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return None
 

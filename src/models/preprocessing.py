@@ -1,32 +1,32 @@
-'''
-Changement à prendre en compte :
-    
-    Riadh : Identifier les mots les plus fréquents pour chacune des classes avec un histogramme, un nuage de point ou un nuage de mots
-
-    Slimane : Étudier les langues présentes dans vos descriptions et désignations. Cette tâche vous aidera à définir quelle langue ou quelles langues utiliser dans la partie prétraitement
-    
-    Nicolas : Comme vous pouvez le voir, le texte est écrit par un humain, et il vous faudra utiliser du NLP pour rendre votre texte compréhensible pour votre modèle. Pour cela, les étapes possibles à ce stade sont : la tokenisation, le retrait des espaces excessifs, la mise en minuscules, la suppression des balises HTML, le retrait des nombres et des caractères spéciaux, supprimer les stopwords, les mots de moins de 3 lettres et les balises HTML, le filtrage des mots vides, la racinisation et la lemmatisation, la vectorisation...
-    
-    Simplice : Vous avez à disposition plusieurs classes "ambiguës" et ne savez pas à quoi correspond chacune d'elles. Vous pouvez essayer d'identifier le groupe de mots désignant chaque classe afin d'avoir une idée plus claire sur le contenu de chacune des classes.
-    
-    Autre : Étudier la répartition de la fréquence des mots dans votre colonne texte
-'''
-
 import os
 import re
+import nltk
 import pandas as pd
 import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
-from bs4 import BeautifulSoup
+from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
-from nltk.stem.snowball import FrenchStemmer
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 from language_labels import language_labels
 from langdetect import detect, lang_detect_exception, DetectorFactory
+from bs4 import BeautifulSoup
 from collections import Counter
+from unidecode import unidecode
 from deep_translator import GoogleTranslator
 from wordcloud import WordCloud
-from PIL import Image 
+from PIL import Image
+from tqdm import tqdm
+from scipy import sparse
+from imblearn.over_sampling import ADASYN
+from imblearn.under_sampling import EditedNearestNeighbours
+
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt')
+
+tqdm.pandas()
 
 DetectorFactory.seed = 0
 
@@ -38,33 +38,22 @@ def check_image_exists(imageid, productid, folder):
 def fusion_description_designation():
     X = pd.read_csv('data/X_train.csv', index_col=0)
     y = pd.read_csv('data/Y_train.csv', index_col=0)
+
     X['descriptif'] = X['description'].astype(str).replace("nan", "") + " " + X['designation'].astype(str)
     X = X.drop(['designation', 'description'], axis=1)
-    return X, y
 
-def re_echantillonage(X, y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=66)
-    return X_train, X_test, y_train, y_test
+    df = pd.merge(X, y, left_index=True, right_index=True)
+
+    return df
 
 def detect_lang(texte):
     try:
-        langue = detect(texte) #code de la langue
+        langue = detect(texte) 
         return language_labels.get(langue, "Langue non supportée")
     except lang_detect_exception.LangDetectException:
         return "Erreur_langue"
 
-def traitement_lang(X):
-    df_lang=pd.DataFrame(X['descriptif'].apply(detect_lang))
-    print(df_lang.value_counts())
-    print("nombre d'éléments=", len(df_lang))
-    return df_lang
-
 def clean_column_descriptif(texte):
-
-    words = set(stopwords.words())
-
-    # Tokenisation
-    # texte = word_tokenize(texte)
 
     # Retrait des espaces excessifs
     texte = re.sub("\s{2,}", " ", texte)
@@ -72,48 +61,29 @@ def clean_column_descriptif(texte):
     # Mettre en minuscule
     texte = texte.lower()
 
-    # Supprimer les noms de fichiers (jpg, jpeg, png, gif, pdf)
-    # texte = re.sub(r'\b\w+\.(jpg|jpeg|png|gif|pdf)\b', '', texte)
-
-    # Supprimer les URLs
-    # texte = re.sub(r'http\S+', '', texte)
-
     # Supprimer les balises HTML
     texte = BeautifulSoup(texte, "html.parser").get_text()
 
-    # Supprimer les nombres et caractères spéciaux
+    # Supprimer les nombres 
     texte = re.sub('\d+', '', texte)
-    # Attention : les caractères spéciaux semblent supprimer les accents (ex : é)
+
+    # Supprimer les accents
+    texte = unidecode(texte)
+
+    # Supprimer les caractères spéciaux
     texte = re.sub("[^a-zA-Z]", " ", texte)
 
-    # On traduit chaques mots de texte en français
-    # print(texte)
-    # texte = GoogleTranslator(source='auto', target='fr').translate(texte)
-
-    # Supprimer les stopwords et les mots de moins de 3 lettres
-    texte = ' '.join([word for word in texte.split() if word not in words])
-    texte = ' '.join([word for word in texte.split() if len(word) > 2])
-
-    # print(texte)
-    # print()
-
-    # Racinisation et lemmatisation
-    # stemmer = FrenchStemmer()
-    # texte = ' '.join([stemmer.stem(word) for word in texte.split()])
+    # Supprimer les stopwords et les mots de moins de 4 lettres
+    stop_words = set(stopwords.words())
+    texte = ' '.join([word for word in texte.split() if word not in stop_words])
+    texte = ' '.join([word for word in texte.split() if len(word) > 3])
 
     return texte
 
-def nettoyer_et_separer(description):
-    mots = re.findall(r'\b\w+\b', description)  # extraire les mots
-    return mots
-
-def word_occurence_by_prdtypecode(X, y):
-    df = pd.DataFrame()
-    df['prdtypecode']= y['prdtypecode']
-    df['descriptif'] = X['descriptif']
+def word_occurence_by_prdtypecode(df):
 
     # Appliquer la fonction de nettoyage à chaque ligne de la colonne 'designation'
-    df['mots'] = df['descriptif'].apply(nettoyer_et_separer)
+    df['mots'] = df['descriptif_cleaned'].apply(lambda description: re.findall(r'\b\w+\b', description))
 
     # Initialiser un dictionnaire vide pour stocker les compteurs par classe
     compteurs_par_classe = {}
@@ -138,36 +108,129 @@ def nuage_de_mots(df_result):
         plt.title(f'Nuage de mots pour la classe {classe}')
         plt.savefig(f"reports/figures/nuage_de_mot/{classe}.png", bbox_inches='tight')
 
-def pre_processing():
+def translate(texte):
+    if len(texte) > 10000:
+        print("Texte trop long pour la traduction :", len(texte))
+        texte1 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[:4000])
+        texte2 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[4000:8000])
+        texte3 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[8000:12000])
+        texte = texte1 + texte2 + texte3
+    elif len(texte) > 5000:
+        print("Texte trop long pour la traduction :", len(texte))
+        texte1 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[:4000])
+        texte2 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[4000:8000])
+        texte = texte1 + texte2
+    else:
+        texte = GoogleTranslator(source=detect(texte), target='fr').translate(texte)
+    return texte
 
-    # Vérification des images
-    pre_processing_image()
+def resample_data(X_train, y_train, booOverSampling):   
+    
+    print("Dimensions avant ré-échantillonnage:")
+    print("X_train=", X_train.shape)
+    print("y_train=", y_train.shape)
+
+    if (not booOverSampling):                
+        LibMethode = "sous-échantillonnage"
+        r_ech = EditedNearestNeighbours()
+    else:
+        LibMethode = "sur-échantillonnage"
+        r_ech = ADASYN()
+    
+    print("\nMéthode de", LibMethode,":", r_ech)
+    
+    X_train, y_train = r_ech.fit_resample(X_train, y_train)
+    sparse.save_npz("data/X_train_sampled.npz", X_train)
+    y_train.to_csv('data/y_train_sampled.csv', index=False)
+
+    print("\Dimensions après ré-échantillonnage")
+    print("X_train_r=", X_train.shape)
+    print("y_train_r=", y_train.shape)
+    print()
+
+    return X_train, y_train
+
+def pre_processing(tokenizer_name=None, isResampling=False):
+
+    # print("Pre-processing des images\n")
+    # pre_processing_image()
 
     print("Fusion des colonnes description et designation\n")
-    X, y = fusion_description_designation()
+    df = fusion_description_designation()
 
     print("Analyse des langues dans la colonne descriptif\n")
-    # df_lang = traitement_lang(X)
-
-    print("Nettoyage de la colonne descriptif\n")
-    if os.path.exists("data/X_preprocessed.csv"):
-        X = pd.read_csv('data/X_preprocessed.csv')
-        X = X.drop('Unnamed: 0', axis=1)
-        X = X.fillna('')
+    if os.path.exists("data/df_lang_preprocessed.csv"):
+        df_lang = pd.read_csv('data/df_lang_preprocessed.csv')
     else:
-        X['descriptif'] = X.apply(lambda row: clean_column_descriptif(row['descriptif']), axis=1)
-        X.to_csv('data/X_preprocessed.csv')
+        df_lang = pd.DataFrame(df['descriptif'].progress_apply(detect_lang))
+        df_lang.to_csv('data/df_lang_preprocessed.csv')
+        print(df_lang.value_counts())
+        print("nombre d'éléments total =", len(df_lang))
+    
+    print("Nettoyage de la colonne descriptif\n")
+    if os.path.exists("data/df_cleaned.csv"):
+        df = pd.read_csv('data/df_cleaned.csv')
+        df = df.fillna('')
+    else:
+        df['descriptif_cleaned'] = df['descriptif'].progress_apply(clean_column_descriptif)
+        df.to_csv('data/df_cleaned.csv')
+
+    # print("Traduction de la colonne descriptif\n")
+    # if os.path.exists("data/df_traducted.csv"):
+    #     df = pd.read_csv('data/df_traducted.csv')
+    #     df = df.fillna('')
+    # else:
+    #     df['descriptif_trad'] = df['descriptif_cleaned'].progress_apply(lambda row: translate(row), axis=1)
+    #     df.to_csv('data/df_traducted.csv')
+
+    print("Lemmatisation de la colonne descriptif\n")
+    if os.path.exists("data/df_lemmatized.csv"):
+        df = pd.read_csv('data/df_lemmatized.csv')
+        df = df.fillna('')
+    else:
+        lemmatizer = WordNetLemmatizer()
+        df['descriptif_cleaned'] = df['descriptif_cleaned'].progress_apply(lambda texte: ' '.join([lemmatizer.lemmatize(mot) for mot in texte.split()]))
+        df.to_csv('data/df_lemmatized.csv')
+
+    print("Tokenisation de la colonne descriptif\n")
+    if tokenizer_name != 'bert':
+        if os.path.exists("data/df_tokenized.csv"):
+            df = pd.read_csv('data/df_tokenized.csv')
+            df = df.fillna('')
+        else:
+            df['tokens'] = df['descriptif_cleaned'].progress_apply(word_tokenize)
+            df.to_csv('data/df_tokenized.csv')
+            df = pd.read_csv('data/df_tokenized.csv')
+            df = df.fillna('')
 
     print("Nuage de mots pour les 27 catégories\n")
-    df_result = word_occurence_by_prdtypecode(X, y)
     if len(os.listdir('reports/figures/nuage_de_mot')) == 0:
+        df_result = word_occurence_by_prdtypecode(df)
         nuage_de_mots(df_result)
 
+    # df = df.sample(frac=0.005, random_state=66)
+
+    print("Répartition Train/Test du jeu de donnée\n")
+    if tokenizer_name != 'bert':
+        X_train, X_test, y_train, y_test = train_test_split(df['tokens'], df['prdtypecode'], test_size=0.2, random_state=66)
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(df['descriptif_cleaned'], df['prdtypecode'], test_size=0.2, random_state=66)
+
+    print("Vectorisation de la colonne descriptif\n")
+    if tokenizer_name != 'bert':
+        vectorizer = TfidfVectorizer()
+        X_train = vectorizer.fit_transform(X_train)
+        X_test = vectorizer.transform(X_test)
+    
     print("Ré-échantillonnage du jeu de donnée\n")
-    X_train, X_test, y_train, y_test = re_echantillonage(X,y)
+    if isResampling == True:
+        if os.path.exists('data/X_train_sampled.npz') and os.path.exists('data/y_train_sampled.csv') :
+            X_train = sparse.load_npz("data/X_train_sampled.npz")
+            y_train = pd.read_csv('data/y_train_sampled.csv')
+        else:
+            X_train, y_train = resample_data(X_train, y_train, booOverSampling=True)
 
     return X_train, X_test, y_train, y_test
-
 
 def pre_processing_image():
     for filename in os.listdir("data/images/image_train"):

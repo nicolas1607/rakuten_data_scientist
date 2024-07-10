@@ -108,9 +108,9 @@ def bagging(X_train, X_test, y_train, y_test, model, model_name, booGrid=False):
 
     return None
 
-def modele_Logistic_Regression(X_train, X_test, y_train, y_test, booGrid=False):
+def modele_logistic_regression(X_train, X_test, y_train, y_test, booGrid=False):
     
-    model_name = 'Logistic_Regression'
+    model_name = 'logistic_regression'
     
     if (not booGrid):
         print("Modélisation Logistic Regression (hors gridSearch)\n")

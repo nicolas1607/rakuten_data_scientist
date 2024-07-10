@@ -10,8 +10,10 @@ linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
 # linearSVM_boosting = boosting(X_train, X_test, y_train, y_test, linearSVM, 'linearSVM', booGrid=False)
 # linearSVM_bagging = bagging(X_train, X_test, y_train, y_test, linearSVM, 'linearSVM', booGrid=False)
 
-# modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=False)
-# modele_regression_logistique(X_train, X_test, y_train, y_test, booGrid=True)
+# logistic_regression = modele_logistic_regression(X_train, X_test, y_train, y_test, booGrid=False)
+# logistic_regression = modele_logistic_regression(X_train, X_test, y_train, y_test, booGrid=True)
+# logistic_regression_boosting = boosting(X_train, X_test, y_train, y_test, logistic_regression, 'logistic_regression', booGrid=False)
+# logistic_regression_bagging = bagging(X_train, X_test, y_train, y_test, logistic_regression, 'logistic_regression', booGrid=False)
 
 # multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False)
 # multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=True)

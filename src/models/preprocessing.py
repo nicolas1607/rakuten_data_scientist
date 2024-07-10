@@ -150,7 +150,7 @@ def resample_data(X_train, y_train, booOverSampling):
 
     return X_train, y_train
 
-def pre_processing(tokenizer_name=None):
+def pre_processing(tokenizer_name=None, isResampling=False):
 
     # print("Pre-processing des images\n")
     # pre_processing_image()
@@ -208,13 +208,12 @@ def pre_processing(tokenizer_name=None):
         df_result = word_occurence_by_prdtypecode(df)
         nuage_de_mots(df_result)
 
-    # df = df.sample(frac=0.1, random_state=66) # réduire le jeu de donnée pour réaliser des tests
+    # df = df.sample(frac=0.005, random_state=66)
 
     print("Répartition Train/Test du jeu de donnée\n")
     if tokenizer_name != 'bert':
         X_train, X_test, y_train, y_test = train_test_split(df['tokens'], df['prdtypecode'], test_size=0.2, random_state=66)
     else:
-        df = df.sample(frac=0.005, random_state=66) # réduire le jeu de donnée pour réaliser des tests
         X_train, X_test, y_train, y_test = train_test_split(df['descriptif_cleaned'], df['prdtypecode'], test_size=0.2, random_state=66)
 
     print("Vectorisation de la colonne descriptif\n")
@@ -224,11 +223,12 @@ def pre_processing(tokenizer_name=None):
         X_test = vectorizer.transform(X_test)
     
     print("Ré-échantillonnage du jeu de donnée\n")
-    if os.path.exists('data/X_train_sampled.npz') and os.path.exists('data/y_train_sampled.csv') :
-        X_train = sparse.load_npz("data/X_train_sampled.npz")
-        y_train = pd.read_csv('data/y_train_sampled.csv')
-    else:
-        X_train, y_train = resample_data(X_train, y_train, booOverSampling=True)
+    if isResampling == True:
+        if os.path.exists('data/X_train_sampled.npz') and os.path.exists('data/y_train_sampled.csv') :
+            X_train = sparse.load_npz("data/X_train_sampled.npz")
+            y_train = pd.read_csv('data/y_train_sampled.csv')
+        else:
+            X_train, y_train = resample_data(X_train, y_train, booOverSampling=True)
 
     return X_train, X_test, y_train, y_test
 

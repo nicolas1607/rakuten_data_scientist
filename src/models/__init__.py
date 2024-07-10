@@ -2,14 +2,18 @@ from preprocessing import pre_processing
 from train_model import *
 from bert_model import *
 
-# Pre-processing
-X_train, X_test, y_train, y_test = pre_processing()
+# Classification des produits (texte)
+X_train, X_test, y_train, y_test = pre_processing(isResampling=False)
 
-# Modélisation de base
-Logistic_Regression = modele_Logistic_Regression(X_train, X_test, y_train, y_test, booGrid=False)
-# Logistic_Regression = modele_Logistic_Regression(X_train, X_test, y_train, y_test, booGrid=True)
-# Logistic_Regression_boosting = boosting(X_train, X_test, y_train, y_test, Logistic_Regression, 'Logistic_Regression', booGrid=False)
-# Logistic_Regression_bagging = bagging(X_train, X_test, y_train, y_test, Logistic_Regression, 'Logistic_Regression', booGrid=False)
+linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
+# linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=True)
+# linearSVM_boosting = boosting(X_train, X_test, y_train, y_test, linearSVM, 'linearSVM', booGrid=False)
+# linearSVM_bagging = bagging(X_train, X_test, y_train, y_test, linearSVM, 'linearSVM', booGrid=False)
+
+# logistic_regression = modele_logistic_regression(X_train, X_test, y_train, y_test, booGrid=False)
+# logistic_regression = modele_logistic_regression(X_train, X_test, y_train, y_test, booGrid=True)
+# logistic_regression_boosting = boosting(X_train, X_test, y_train, y_test, logistic_regression, 'logistic_regression', booGrid=False)
+# logistic_regression_bagging = bagging(X_train, X_test, y_train, y_test, logistic_regression, 'logistic_regression', booGrid=False)
 
 # multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False)
 # multinomialNB = modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=True)
@@ -20,11 +24,6 @@ Logistic_Regression = modele_Logistic_Regression(X_train, X_test, y_train, y_tes
 # complementNB = modele_complementNB(X_train, X_test, y_train, y_test, booGrid=True)
 # complementNB_boosting = boosting(X_train, X_test, y_train, y_test, complementNb, 'complementNb', booGrid=False)
 # complementNB_bagging = bagging(X_train, X_test, y_train, y_test, complementNb, 'complementNb', booGrid=False)
-
-# linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
-# linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=True)
-# linearSVM_boosting = boosting(X_train, X_test, y_train, y_test, linearSVM, 'linearSVM', booGrid=False)
-# linearSVM_bagging = bagging(X_train, X_test, y_train, y_test, linearSVM, 'linearSVM', booGrid=False)
 
 # sgd = modele_sgd(X_train, X_test, y_train, y_test, booGrid=False)
 # sgd = modele_sgd(X_train, X_test, y_train, y_test, booGrid=True)

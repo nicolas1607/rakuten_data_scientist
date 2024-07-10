@@ -108,9 +108,9 @@ def bagging(X_train, X_test, y_train, y_test, model, model_name, booGrid=False):
 
     return None
 
-def modele_Logistic_Regression(X_train, X_test, y_train, y_test, booGrid=False):
+def modele_logistic_regression(X_train, X_test, y_train, y_test, booGrid=False):
     
-    model_name = 'Logistic_Regression'
+    model_name = 'logistic_regression'
     
     if (not booGrid):
         print("Modélisation Logistic Regression (hors gridSearch)\n")
@@ -181,7 +181,7 @@ def modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False):
         if os.path.exists("models/"+model_name+".pkl"):
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
-            model = LinearSVC()
+            model = LinearSVC(C=0.7399651076649312, max_iter=10000)
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
@@ -189,7 +189,7 @@ def modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False):
         print("Modèlisation Linear SVM (gridSearch)\n")
         model = LinearSVC()
         parametres = {'C': (1e-6, 1e+6, 'log-uniform'), 'max_iter': (1000, 10000)}
-        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
+        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'bayes')
 
     return model
 

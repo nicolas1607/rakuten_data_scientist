@@ -1,6 +1,5 @@
 from preprocessing import pre_processing_texte, pre_processing_image
 from train_model import *
-from train_model_image import *
 from bert_model import *
 from model_res_net_50 import *
 

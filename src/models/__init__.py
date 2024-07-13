@@ -4,8 +4,8 @@ from bert_model import *
 from model_res_net_50 import *
 
 # Classification des produits (texte)
-X_train, X_test, y_train, y_test = pre_processing_texte(isResampling=False)
-linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
+# X_train, X_test, y_train, y_test = pre_processing_texte(isResampling=False)
+# linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
 
 # Classification des produits (image)
 X_train, X_test, y_train, y_test = pre_processing_image(size=125)

@@ -231,33 +231,44 @@ def pre_processing_texte(tokenizer_name=None, isResampling=False):
 
 def pre_processing_image(size):
 
-    resize_images_folder('data/images/image_train/', size)
+    input_path = 'data/images/image_train/'
+    output_path = 'data/images/image_train_preprocessed/'
+
+    resize_images_folder(input_path, output_path, size)
 
     X = pd.read_csv('data/X_train.csv', index_col=0)
     y = pd.read_csv('data/Y_train.csv', index_col=0)
 
     df = X.merge(y, left_index=True, right_index=True)
-    df = df.sample(frac=0.1).reset_index(drop=True)
-    df['filepath'] = df.apply(lambda row: "data/images/image_train/image_" + str(row['imageid']) + "_product_" + str(row['productid']) + ".jpg", axis=1)
+    df['filepath'] = df.apply(lambda row: input_path + 'image_' + str(row['imageid']) + '_product_' + str(row['productid']) + '.jpg', axis=1)
     df['prdtypecode'] = df['prdtypecode'].astype(str)
 
     X_train, X_test, y_train, y_test = train_test_split(df['filepath'], df['prdtypecode'], test_size=0.20, random_state=66)
 
     return X_train, X_test, y_train, y_test
 
-def resize_images_folder(folder_path, size):
+def resize_images_folder(input_path, output_path, size):
 
-    if not os.path.exists(folder_path+"resized"):
-        os.makedirs(folder_path+"resized")
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
 
-    if len(os.listdir(folder_path+"resized")) == 0:
-        for index, filename in enumerate(os.listdir(folder_path)):
-            image = cv2.imread(folder_path+filename, cv2.IMREAD_COLOR)
+    if len(os.listdir(output_path)) == 0:
+        for index, filename in enumerate(os.listdir(input_path)):
+            image = cv2.imread(input_path+filename, cv2.IMREAD_COLOR)
+
+            # Passage en noir et blanc
+            # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            # Erosion de l'image
+            # filtre = cv2.GaussianBlur(image, ksize = (3,3), sigmaX = 0)
+            # kernel = np.ones((3,3), np.uint8)
+            # image = cv2.erode(filtre, kernel)
+
             if image is not None:
                 image = cv2.resize(image, (size, size))
-                cv2.imwrite(folder_path+"resized/"+filename, image)
+                cv2.imwrite(output_path+filename, image)
             else:
-                print(f"Erreur de lecture de l'image : {folder_path+filename}")
+                print(f"Erreur de lecture de l'image : {input_path+filename}")
 
             if index % 1000 == 0:
-                print(f"Redimensionnement de {i} images terminé")
+                print(f"Redimensionnement de {index} images terminé")

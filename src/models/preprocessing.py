@@ -240,7 +240,7 @@ def pre_processing_image(size):
     y = pd.read_csv('data/Y_train.csv', index_col=0)
 
     df = X.merge(y, left_index=True, right_index=True)
-    df['filepath'] = df.apply(lambda row: input_path + 'image_' + str(row['imageid']) + '_product_' + str(row['productid']) + '.jpg', axis=1)
+    df['filepath'] = df.apply(lambda row: output_path + 'image_' + str(row['imageid']) + '_product_' + str(row['productid']) + '.jpg', axis=1)
     df['prdtypecode'] = df['prdtypecode'].astype(str)
 
     X_train, X_test, y_train, y_test = train_test_split(df['filepath'], df['prdtypecode'], test_size=0.20, random_state=66)

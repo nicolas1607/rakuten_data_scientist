@@ -13,8 +13,8 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
     model_name = "resnet50"
 
     num_classes = 27
-    epochs = 4
-    batch_size = 32
+    epochs = 20
+    batch_size = 8
     learning_rate = 0.001
     img_size = (size, size)
 
@@ -48,17 +48,8 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
         base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(size, size, 3))
 
         x = base_model.output
-        # x = GlobalAveragePooling2D()(x)
-        # x = Dense(128, activation='relu')(x)
+        x = GlobalAveragePooling2D()(x)
         x = Dense(128, activation='relu')(x)
-        x = Dense(64, activation='relu')(x)
-        x = Dense(64, activation='relu')(x)
-
-        # inputs = base_model.input
-        # x = Dense(128, activation='relu')(inputs)
-        # x = Dense(50, activation='relu')(x)
-        # outputs = Dense(num_classes, activation='softmax')(x)
-        
         outputs = Dense(num_classes, activation='softmax')(x)
 
         model = Model(inputs=base_model.input, outputs=outputs)

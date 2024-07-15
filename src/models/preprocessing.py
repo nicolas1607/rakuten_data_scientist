@@ -3,7 +3,8 @@ import re
 import nltk
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import cv2
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
@@ -21,7 +22,10 @@ from tqdm import tqdm
 from scipy import sparse
 from imblearn.over_sampling import ADASYN
 from imblearn.under_sampling import EditedNearestNeighbours
-
+import numpy as np
+from PIL import Image
+import gc
+import pickle
 nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('punkt')
@@ -40,7 +44,7 @@ def fusion_description_designation():
     y = pd.read_csv('data/Y_train.csv', index_col=0)
 
     X['descriptif'] = X['description'].astype(str).replace("nan", "") + " " + X['designation'].astype(str)
-    X = X.drop(['designation', 'description'], axis=1)
+    X = X.drop(['designation', 'description',], axis=1)
 
     df = pd.merge(X, y, left_index=True, right_index=True)
 
@@ -232,14 +236,64 @@ def pre_processing(tokenizer_name=None, isResampling=False):
 
     return X_train, X_test, y_train, y_test
 
-def pre_processing_image():
-    for filename in os.listdir("data/images/image_train"):
-        image = Image.open("data/images/image_train/"+filename)
-        if image.mode != "RGB":
-            print("L'image {filename} n'est pas en mode RGB")
-        if image.size != (500, 500):
-            print("L'image {filename} n'est pas en 500x500 pixels")
-        if image.format != "JPEG":
-            print("L'image {filename} n'est pas au format JPEG")
-        image.close()
-    print("Toutes les images sont en mode RGB, en 500x500 pixels et au format JPEG\n")
+import os
+import pandas as pd
+from PIL import Image
+import numpy as np
+from sklearn.model_selection import train_test_split
+
+import os
+import numpy as np
+import gc
+from PIL import Image
+from sklearn.model_selection import train_test_split
+
+import os
+import numpy as np
+import gc
+from PIL import Image
+from sklearn.model_selection import train_test_split
+
+def pre_processing_image(size):
+
+    input_path = 'data/images/image_train/'
+    output_path = 'data/images/image_train_preprocessed/'
+
+    resize_images_folder(input_path, output_path, size)
+
+    X = pd.read_csv('data/X_train.csv', index_col=0)
+    y = pd.read_csv('data/Y_train.csv', index_col=0)
+
+    df = X.merge(y, left_index=True, right_index=True)
+    df['filepath'] = df.apply(lambda row: output_path + 'image_' + str(row['imageid']) + '_product_' + str(row['productid']) + '.jpg', axis=1)
+    df['prdtypecode'] = df['prdtypecode'].astype(str)
+
+    X_train, X_test, y_train, y_test = train_test_split(df['filepath'], df['prdtypecode'], test_size=0.20, random_state=66)
+
+    return X_train, X_test, y_train, y_test
+
+def resize_images_folder(input_path, output_path, size):
+
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    if len(os.listdir(output_path)) == 0:
+        for index, filename in enumerate(os.listdir(input_path)):
+            image = cv2.imread(input_path+filename, cv2.IMREAD_COLOR)
+
+            # Passage en noir et blanc
+            # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            # Erosion de l'image
+            # filtre = cv2.GaussianBlur(image, ksize = (3,3), sigmaX = 0)
+            # kernel = np.ones((3,3), np.uint8)
+            # image = cv2.erode(filtre, kernel)
+
+            if image is not None:
+                image = cv2.resize(image, (size, size))
+                cv2.imwrite(output_path+filename, image)
+            else:
+                print(f"Erreur de lecture de l'image : {input_path+filename}")
+
+            if index % 1000 == 0:
+                print(f"Redimensionnement de {index} images terminé")

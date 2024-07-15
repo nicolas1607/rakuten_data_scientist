@@ -257,7 +257,9 @@ def resize_images_folder(input_path, output_path, size):
             image = cv2.imread(input_path+filename, cv2.IMREAD_COLOR)
 
             # Passage en noir et blanc
-            # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            # Tester le filtre : flou gaussien
 
             # Erosion de l'image
             # filtre = cv2.GaussianBlur(image, ksize = (3,3), sigmaX = 0)

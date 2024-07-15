@@ -9,6 +9,7 @@ from keras.models import Model
 from keras.layers import Dense
 from keras.optimizers import Adam
 from sklearn.metrics import classification_report, confusion_matrix
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 def plot_accuracy(model_history, model_name):
     plt.plot(model_history.history['accuracy'], label='accuracy')
@@ -37,9 +38,10 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
     model_name = "resnet50"
 
     num_classes = 27
-    epochs = 10
+    epochs = 20
     batch_size = 8
     learning_rate = 0.001
+    patience = 4
 
     # Tester les callbacks
 
@@ -79,6 +81,10 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
     else:
         base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(size, size, 3), pooling='avg', classes=num_classes, classifier_activation='softmax', input_tensor=None)
 
+        # early_stopping_callback = EarlyStopping(monitor='val_loss', patience=patience, min_delta=0.001)
+        reduce_lr_callback = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=patience, min_lr=0.001)
+        model_checkpoint_callback = ModelCheckpoint(filepath='models/resnet50/checkpoint_{epoch:02d}.hdf5', monitor='val_loss', save_best_only=True, mode='min')
+
         x = base_model.output
         x = Dense(128, activation='relu')(x)
         outputs = Dense(num_classes, activation='softmax')(x)
@@ -94,6 +100,12 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
             train_generator,
             epochs=epochs,
             validation_data=test_generator,
+            callbacks=[
+                # early_stopping_callback, 
+                reduce_lr_callback, 
+                model_checkpoint_callback
+            ]
+            # steps_per_epoch=train_generator.n // batch_size
         )
 
         pickle.dump(model, open("models/"+model_name+".pkl", "wb"))

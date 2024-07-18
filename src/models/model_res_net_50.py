@@ -2,6 +2,7 @@ import os
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
+import tensorflow_addons as tfa
 
 from keras.preprocessing.image import ImageDataGenerator
 from keras.applications import ResNet50
@@ -9,44 +10,9 @@ from keras.models import Model
 from keras.layers import Dense
 from keras.optimizers import Adam
 from sklearn.metrics import classification_report, confusion_matrix
-from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 
-def plot_accuracy(model_history, model_name):
-    plt.plot(model_history.history['accuracy'], label='accuracy')
-    plt.plot(model_history.history['val_accuracy'], label='val_accuracy')
-    # plt.ylim([0,1])
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.title(model_name + ' accuracy')
-    plt.legend(['Train', 'Test'], loc='upper left')
-    plt.grid(True)
-    plt.savefig("models/"+model_name+"_accuracy.png", bbox_inches='tight')
-
-def plot_loss(model_history, model_name):
-    plt.plot(model_history.history['loss'], label='loss')
-    plt.plot(model_history.history['val_loss'], label='val_loss')
-    # plt.ylim([0,10])
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title(model_name + ' loss')
-    plt.legend(['Train', 'Test'], loc='upper left')
-    plt.grid(True)
-    plt.savefig("models/"+model_name+"_loss.png", bbox_inches='tight')
-
-def model_resnet50(X_train, X_test, y_train, y_test, size):
-    
-    model_name = "resnet50"
-
-    num_classes = 27
-    epochs = 20
-    batch_size = 8
-    learning_rate = 0.001
-    patience = 4
-
-    # Tester les callbacks
-
-    train_df = pd.DataFrame({'filepath': X_train, 'prdtypecode': y_train})
-    test_df = pd.DataFrame({'filepath': X_test, 'prdtypecode': y_test})
+def data_augmentation(train_df, test_df, batch_size, size):
 
     train_datagen = ImageDataGenerator(
         rescale=0.1,
@@ -56,6 +22,7 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
         height_shift_range=0.1,
         horizontal_flip=True,
     )
+
     test_datagen = ImageDataGenerator(rescale=0.1)
 
     train_generator = train_datagen.flow_from_dataframe(
@@ -76,8 +43,63 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
         class_mode='categorical'
     )
 
+    return train_generator, test_generator
+
+def get_predictions(model, X_test, y_test):
+
+    y_pred = model.predict(X_test)
+
+    y_pred_class = y_pred.argmax(axis = 1)
+    y_test_class = y_test.classes
+
+    print(classification_report(y_test_class, y_pred_class))
+    print(confusion_matrix(y_test_class, y_pred_class))
+
+def plot_accuracy(model_history, model_name):
+
+    if isinstance(model_history, dict) == False:
+        model_history = model_history['history']
+
+    plt.plot(model_history['accuracy'], label='accuracy')
+    plt.plot(model_history['val_accuracy'], label='val_accuracy')
+    # plt.ylim([0,1])
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.title(model_name + ' accuracy')
+    plt.legend(['Train', 'Test'], loc='upper right')
+    plt.grid(True)
+    plt.savefig("reports/figures/resnet50/"+model_name+"_accuracy.png", bbox_inches='tight')
+
+def plot_loss(model_history, model_name):
+    
+    plt.plot(model_history['loss'], label='loss')
+    plt.plot(model_history['val_loss'], label='val_loss')
+    # plt.ylim([0,10])
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title(model_name + ' loss')
+    plt.legend(['Train', 'Test'], loc='upper right')
+    plt.grid(True)
+    plt.savefig("reports/figures/resnet50/"+model_name+"_loss.png", bbox_inches='tight')
+
+def model_resnet50(X_train, X_test, y_train, y_test, size):
+    
+    model_name = "resnet50"
+
+    num_classes = 27
+    epochs = 20
+    batch_size = 8
+    learning_rate = 0.001
+    patience = 4
+
+    train_df = pd.DataFrame({'filepath': X_train, 'prdtypecode': y_train})
+    test_df = pd.DataFrame({'filepath': X_test, 'prdtypecode': y_test})
+
+    train_generator, test_generator = data_augmentation(train_df, test_df, batch_size, size)
+
     if os.path.exists("models/"+model_name+".pkl"):
         model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        model_history = pickle.load(open("models/"+model_name+"_history.pkl", "rb"))
     else:
         base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(size, size, 3), pooling='avg', classes=num_classes, classifier_activation='softmax', input_tensor=None)
 
@@ -94,7 +116,11 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
         for layer in base_model.layers:
             layer.trainable = False
 
-        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(
+            optimizer=Adam(learning_rate=learning_rate), 
+            loss='categorical_crossentropy', 
+            metrics=['accuracy', tfa.metrics.F1Score(num_classes=27, name='f1_score')]
+        )
 
         model_history = model.fit(
             train_generator,
@@ -105,23 +131,15 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
                 reduce_lr_callback, 
                 model_checkpoint_callback
             ]
-            # steps_per_epoch=train_generator.n // batch_size
         )
 
         pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+        pickle.dump(model_history.history, open("models/"+model_name+"_history.pkl", "wb"))
 
-    loss, accuracy = model.evaluate(test_generator)
-    print(f'Loss: {loss}, Accuracy: {accuracy}')
+    loss, accuracy, f1_score = model.evaluate(test_generator)
+    print(f'Loss: {loss}, Accuracy: {accuracy}, F1 Score: {f1_score}')
 
-    # Prédictions sur le jeu de test
-    # y_pred = model.predict(X_test)
+    # get_predictions(model, test_generator, y_test)
 
-    # y_pred_class = y_pred.argmax(axis = 1)
-    # y_test_class = y_test.argmax(axis = 1)
-
-    # print(classification_report(y_test_class, y_pred_class))
-    # print(confusion_matrix(y_test_class, y_pred_class))
-
-    # Graphiques
     # plot_accuracy(model_history, model_name)
     # plot_loss(model_history, model_name)

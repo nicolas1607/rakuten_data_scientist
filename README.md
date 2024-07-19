@@ -1,4 +1,66 @@
-Project Name
+# Rakuten
+
+### Pré-requis
+Python 3.8.10
+
+## Installer les librairies
+```
+> cd mai24_bds_rakuten
+> python3 -m venv env
+> source env/bin/activate
+> pip install -r requirements.txt
+```
+
+## Fichiers .zip fournis
+Ces fichiers sont fournis en archive afin d'éviter de relancer le pre-processing des données et les modèles LinearSVM et ResNet50.
+
+> unzip les données
+
+**Données fournies par Rakuten**
+>data/X_train.csv\
+data/y_train.csv\
+data/images/image_train\
+data/images/image_test
+
+**Données fournies pour le pre-processing**
+>data/df_lang_preprocessed.csv\
+data/df_cleaned.csv\
+data/df_lemmatized.csv\
+data/df_tokenized.csv\
+data/X_train_sampled.npz\
+data/y_train_sampled.csv\
+data/images/image_train_preprocessed
+
+**Données fournies pour les modèles retenus**
+>models/linear_svm.pkl \
+models/resnet50.pkl
+models/resnet50_history.pkl
+
+
+## Rapport projet
+Le rapport final du projet en PDF
+>reports/rapport_projet_rakuten.pdf
+
+## Graphiques
+Les matrices de confusion
+>reports/figures/matrice_de_confusion
+
+Les nuages de mots
+>reports/figures/nuage_de_mot
+
+## Exploration des données & Data Vizualisation
+```
+> cd mai24_bds_rakuten
+> python3 src/visualization/__init__.py
+```
+
+
+## Pre-processing & Modélisation
+```
+> cd mai24_bds_rakuten
+> python3 src/models/__init__.py
+```
+
 ==============================
 
 This repo is a Starting Pack for DS projects. You can rearrange the structure to make it fits your project.

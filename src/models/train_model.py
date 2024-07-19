@@ -3,7 +3,8 @@ import pickle
 import time
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+import cv2
+import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
@@ -12,12 +13,24 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
-
+import pickle
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
 from sklearnex import patch_sklearn
+import os
+import pickle
+import time
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import classification_report, confusion_matrix, f1_score, accuracy_score
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 
 # Intel(R) Extension for Scikit-learn
 patch_sklearn()
@@ -324,12 +337,12 @@ def modele_xgboost(X_train, X_test, y_train, y_test, booGrid=False):
         }
         model = optimisation(X_train, X_test, y_train_encoded, y_test_encoded, model, model_name, parametres, type='bayes')
 
+
     return model
 
 def confusion_heatmap(y_test, y_pred, modele_name):
     
     conf_mat = confusion_matrix(y_test, y_pred)
-    plt.figure(figsize=(15, 15))
     plt.figure(figsize=(15, 15)) 
     sns.heatmap(conf_mat, cmap = "coolwarm", annot=True, fmt="d")
    
@@ -342,3 +355,73 @@ def convertir_duree(secondes):
     minutes, secondes = divmod(secondes, 60)
     heures, minutes = divmod(minutes, 60)
     return heures, minutes, secondes
+def model_cnn(X_train, X_test, y_train, y_test, size):
+
+    model_name = "cnn_model"
+
+    num_classes = 27
+    epochs = 20
+    batch_size = 32
+    learning_rate = 0.001
+    img_size = (size, size)
+
+    train_datagen = ImageDataGenerator(rescale=1./255, horizontal_flip=True, zoom_range=0.2)
+    test_datagen = ImageDataGenerator(rescale=1./255)
+
+    train_df = pd.DataFrame({'filepath': X_train, 'prdtypecode': y_train})
+    test_df = pd.DataFrame({'filepath': X_test, 'prdtypecode': y_test})
+
+    train_generator = train_datagen.flow_from_dataframe(
+        dataframe=train_df,
+        x_col='filepath',
+        y_col='prdtypecode',
+        target_size=img_size,
+        batch_size=batch_size,
+        class_mode='categorical'
+    )
+
+    validation_generator = test_datagen.flow_from_dataframe(
+        dataframe=test_df,
+        x_col='filepath',
+        y_col='prdtypecode',
+        target_size=img_size,
+        batch_size=batch_size,
+        class_mode='categorical'
+    )
+
+    if os.path.exists("models/"+model_name+".pkl"):
+        model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+    else:
+        model = Sequential()
+
+        model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(size, size, 3)))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Dropout(0.25))
+
+        model.add(Conv2D(64, (3, 3), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Dropout(0.25))
+
+        model.add(Conv2D(128, (3, 3), activation='relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(Dropout(0.25))
+
+        model.add(Flatten())
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(num_classes, activation='softmax'))
+
+        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
+
+        model.fit(
+            train_generator,
+            steps_per_epoch=train_generator.n // batch_size,
+            epochs=epochs,
+            validation_data=validation_generator,
+            validation_steps=validation_generator.n // batch_size
+        )
+
+        pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+
+    loss, accuracy = model.evaluate(validation_generator)
+    print(f'Loss: {loss}, Accuracy: {accuracy}')

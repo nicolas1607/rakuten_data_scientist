@@ -8,8 +8,9 @@ from model_res_net_50 import *
 # linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
 
 # Classification des produits (image)
-X_train, X_test, y_train, y_test = pre_processing_image(size=125)
-resnet50 = model_resnet50(X_train, X_test, y_train, y_test, size=125)
+# X_train, X_test, y_train, y_test = pre_processing_image(size=125)
+# sequential = model_cnn(X_train, X_test, y_train, y_test, size=125)
+# resnet50 = model_resnet50(X_train, X_test, y_train, y_test, size=125)
 
 # logistic_regression = modele_logistic_regression(X_train, X_test, y_train, y_test, booGrid=False)
 # logistic_regression = modele_logistic_regression(X_train, X_test, y_train, y_test, booGrid=True)

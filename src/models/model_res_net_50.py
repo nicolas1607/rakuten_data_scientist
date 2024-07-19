@@ -3,6 +3,8 @@ import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow_addons as tfa
+import seaborn as sns
+import numpy as np
 
 from keras.preprocessing.image import ImageDataGenerator
 from keras.applications import ResNet50
@@ -48,39 +50,38 @@ def data_augmentation(train_df, test_df, batch_size, size):
 def get_predictions(model, X_test, y_test):
 
     y_pred = model.predict(X_test)
-
     y_pred_class = y_pred.argmax(axis = 1)
-    y_test_class = y_test.classes
+    
+    if isinstance(y_test, pd.Series):
+        y_test_class = y_test.values
+    else:
+        y_test_class = y_test
 
-    print(classification_report(y_test_class, y_pred_class))
+    y_test_class = np.array(y_test_class).astype(int)
+    y_pred_class = np.array(y_pred_class).astype(int)
+
+    print(classification_report(y_test_class, y_pred_class, zero_division=0))
     print(confusion_matrix(y_test_class, y_pred_class))
 
-def plot_accuracy(model_history, model_name):
+def plot_loss_and_accuracy(model_history, model_name):
 
-    if isinstance(model_history, dict) == False:
-        model_history = model_history['history']
+    plt.figure(figsize=(12,4))
+    plt.subplot(121)
+    plt.plot(model_history['loss'])
+    plt.plot(model_history['val_loss'])
+    plt.title('Model loss by epoch')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='right')
 
-    plt.plot(model_history['accuracy'], label='accuracy')
-    plt.plot(model_history['val_accuracy'], label='val_accuracy')
-    # plt.ylim([0,1])
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.title(model_name + ' accuracy')
-    plt.legend(['Train', 'Test'], loc='upper right')
-    plt.grid(True)
-    plt.savefig("reports/figures/resnet50/"+model_name+"_accuracy.png", bbox_inches='tight')
-
-def plot_loss(model_history, model_name):
-    
-    plt.plot(model_history['loss'], label='loss')
-    plt.plot(model_history['val_loss'], label='val_loss')
-    # plt.ylim([0,10])
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title(model_name + ' loss')
-    plt.legend(['Train', 'Test'], loc='upper right')
-    plt.grid(True)
-    plt.savefig("reports/figures/resnet50/"+model_name+"_loss.png", bbox_inches='tight')
+    plt.subplot(122)
+    plt.plot(model_history['accuracy'])
+    plt.plot(model_history['val_accuracy'])
+    plt.title('Model accuracy by epoch')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='right')
+    plt.savefig("reports/figures/resnet50/"+model_name+".png", bbox_inches='tight')
 
 def model_resnet50(X_train, X_test, y_train, y_test, size):
     
@@ -136,10 +137,7 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
         pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         pickle.dump(model_history.history, open("models/"+model_name+"_history.pkl", "wb"))
 
+    plot_loss_and_accuracy(model_history, model_name)
+
     loss, accuracy, f1_score = model.evaluate(test_generator)
     print(f'Loss: {loss}, Accuracy: {accuracy}, F1 Score: {f1_score}')
-
-    # get_predictions(model, test_generator, y_test)
-
-    # plot_accuracy(model_history, model_name)
-    # plot_loss(model_history, model_name)

@@ -4,6 +4,8 @@ import cv2
 import nltk
 import pandas as pd
 import matplotlib.pyplot as plt
+import cv2
+import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -40,7 +42,7 @@ def fusion_description_designation():
     y = pd.read_csv('data/Y_train.csv', index_col=0)
 
     X['descriptif'] = X['description'].astype(str).replace("nan", "") + " " + X['designation'].astype(str)
-    X = X.drop(['designation', 'description'], axis=1)
+    X = X.drop(['designation', 'description',], axis=1)
 
     df = pd.merge(X, y, left_index=True, right_index=True)
 
@@ -255,16 +257,7 @@ def resize_images_folder(input_path, output_path, size):
     if len(os.listdir(output_path)) == 0:
         for index, filename in enumerate(os.listdir(input_path)):
             image = cv2.imread(input_path+filename, cv2.IMREAD_COLOR)
-
-            # Passage en noir et blanc
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-            # Tester le filtre : flou gaussien
-
-            # Erosion de l'image
-            # filtre = cv2.GaussianBlur(image, ksize = (3,3), sigmaX = 0)
-            # kernel = np.ones((3,3), np.uint8)
-            # image = cv2.erode(filtre, kernel)
 
             if image is not None:
                 image = cv2.resize(image, (size, size))

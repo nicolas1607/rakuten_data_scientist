@@ -3,8 +3,9 @@ import pickle
 import time
 import seaborn as sns
 import matplotlib.pyplot as plt
-import cv2
 import pandas as pd
+import numpy as np
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
@@ -13,24 +14,15 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
-import pickle
-from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.optimizers import Adam
+from keras.preprocessing.image import ImageDataGenerator
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearnex import patch_sklearn
-import os
-import pickle
-import time
-import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.metrics import classification_report, confusion_matrix, f1_score, accuracy_score
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 
 # Intel(R) Extension for Scikit-learn
 patch_sklearn()
@@ -355,6 +347,7 @@ def convertir_duree(secondes):
     minutes, secondes = divmod(secondes, 60)
     heures, minutes = divmod(minutes, 60)
     return heures, minutes, secondes
+
 def model_cnn(X_train, X_test, y_train, y_test, size):
 
     model_name = "cnn_model"
@@ -425,3 +418,20 @@ def model_cnn(X_train, X_test, y_train, y_test, size):
 
     loss, accuracy = model.evaluate(validation_generator)
     print(f'Loss: {loss}, Accuracy: {accuracy}')
+
+def get_features_importance(model, vectorizer):
+
+    features = vectorizer.get_feature_names_out()
+    feature_importance = np.abs(model.coef_)
+    features_importance = pd.DataFrame(data=feature_importance[0], index=features, columns=['importance'])
+    features_importance = features_importance.sort_values(by='importance', ascending=False)
+    features_importance = features_importance.head(10)
+
+    plt.figure(figsize=(12, 6))
+    sns.barplot(x=features_importance.index, y=features_importance['importance'])
+    plt.title("Importance des mots dans le modèle")
+    plt.xticks(rotation=45)
+    plt.xlabel("Mots")
+    plt.ylabel("Importance")
+    plt.tight_layout()
+    plt.savefig("reports/figures/features_importance.png", bbox_inches='tight')

@@ -11,8 +11,7 @@ from keras.applications import ResNet50
 from keras.models import Model
 from keras.layers import Dense
 from keras.optimizers import Adam
-from sklearn.metrics import classification_report, confusion_matrix
-from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
+from keras.callbacks import ReduceLROnPlateau
 
 def data_augmentation(train_df, test_df, batch_size, size):
 
@@ -47,23 +46,7 @@ def data_augmentation(train_df, test_df, batch_size, size):
 
     return train_generator, test_generator
 
-def get_predictions(model, X_test, y_test):
-
-    y_pred = model.predict(X_test)
-    y_pred_class = y_pred.argmax(axis = 1)
-    
-    if isinstance(y_test, pd.Series):
-        y_test_class = y_test.values
-    else:
-        y_test_class = y_test
-
-    y_test_class = np.array(y_test_class).astype(int)
-    y_pred_class = np.array(y_pred_class).astype(int)
-
-    print(classification_report(y_test_class, y_pred_class, zero_division=0))
-    print(confusion_matrix(y_test_class, y_pred_class))
-
-def plot_loss_and_accuracy(model_history, model_name):
+def plot_results(model_history):
 
     plt.figure(figsize=(12,4))
     plt.subplot(121)
@@ -81,7 +64,8 @@ def plot_loss_and_accuracy(model_history, model_name):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='right')
-    plt.savefig("reports/figures/resnet50/"+model_name+".png", bbox_inches='tight')
+
+    plt.savefig("reports/figures/resnet50/plot_accuracy_and_loss.png", bbox_inches='tight')
 
 def model_resnet50(X_train, X_test, y_train, y_test, size):
     
@@ -104,9 +88,7 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
     else:
         base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(size, size, 3), pooling='avg', classes=num_classes, classifier_activation='softmax', input_tensor=None)
 
-        # early_stopping_callback = EarlyStopping(monitor='val_loss', patience=patience, min_delta=0.001)
         reduce_lr_callback = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=patience, min_lr=0.001)
-        model_checkpoint_callback = ModelCheckpoint(filepath='models/resnet50/checkpoint_{epoch:02d}.hdf5', monitor='val_loss', save_best_only=True, mode='min')
 
         x = base_model.output
         x = Dense(128, activation='relu')(x)
@@ -116,6 +98,8 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
 
         for layer in base_model.layers:
             layer.trainable = False
+
+        print(model.summary())
 
         model.compile(
             optimizer=Adam(learning_rate=learning_rate), 
@@ -127,17 +111,13 @@ def model_resnet50(X_train, X_test, y_train, y_test, size):
             train_generator,
             epochs=epochs,
             validation_data=test_generator,
-            callbacks=[
-                # early_stopping_callback, 
-                reduce_lr_callback, 
-                model_checkpoint_callback
-            ]
+            callbacks=[reduce_lr_callback]
         )
 
         pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         pickle.dump(model_history.history, open("models/"+model_name+"_history.pkl", "wb"))
 
-    plot_loss_and_accuracy(model_history, model_name)
+    plot_results(model_history)
 
     loss, accuracy, f1_score = model.evaluate(test_generator)
     print(f'Loss: {loss}, Accuracy: {accuracy}, F1 Score: {f1_score}')

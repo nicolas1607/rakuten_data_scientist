@@ -207,8 +207,6 @@ def pre_processing_texte(tokenizer_name=None, isResampling=False):
         df_result = word_occurence_by_prdtypecode(df)
         nuage_de_mots(df_result)
 
-    # df = df.sample(frac=0.005, random_state=66)
-
     print("Répartition Train/Test du jeu de donnée\n")
     if tokenizer_name != 'bert':
         X_train, X_test, y_train, y_test = train_test_split(df['tokens'], df['prdtypecode'], test_size=0.2, random_state=66)
@@ -229,7 +227,7 @@ def pre_processing_texte(tokenizer_name=None, isResampling=False):
         else:
             X_train, y_train = resample_data(X_train, y_train, booOverSampling=True)
 
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train, y_test, vectorizer, df
 
 def pre_processing_image(size):
 

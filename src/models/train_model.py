@@ -23,6 +23,7 @@ from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearnex import patch_sklearn
+from lime.lime_text import LimeTextExplainer
 
 # Intel(R) Extension for Scikit-learn
 patch_sklearn()
@@ -435,3 +436,30 @@ def get_features_importance(model, vectorizer):
     plt.ylabel("Importance")
     plt.tight_layout()
     plt.savefig("reports/figures/features_importance.png", bbox_inches='tight')
+
+def predict_proba_for_lime(model, texts, vectorizer):
+    if isinstance(texts, str):
+        texts = [texts]
+    if isinstance(texts, list):
+        texts = np.array(texts)
+    if texts.ndim == 1:
+        texts = texts.reshape(-1, 1)
+    
+    # Vectorisation des textes
+    texts_vectorized = vectorizer.transform(texts.ravel())
+
+    decision_scores = model.decision_function(texts_vectorized)
+
+    # Convertir les scores de décision en probabilités
+    expit_scores = np.exp(decision_scores) / np.sum(np.exp(decision_scores), axis=1, keepdims=True)
+    return expit_scores
+
+def interpretability(model, df, vectorizer):
+    
+    texte = df['tokens'][3]
+
+    # Initialise l'explainer LIME
+    explainer = LimeTextExplainer(class_names=df['prdtypecode'].unique())
+    # Utilise la fonction de prédiction adaptée
+    explanation = explainer.explain_instance(texte, lambda x: predict_proba_for_lime(model, x, vectorizer), num_features=50, num_samples=100)
+    explanation.save_to_file('reports/figures/lime_explanation.html')

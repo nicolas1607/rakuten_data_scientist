@@ -3,8 +3,14 @@ import pickle
 import time
 import seaborn as sns
 import matplotlib.pyplot as plt
+<<<<<<< HEAD
 import cv2
 import pandas as pd
+=======
+import pandas as pd
+import numpy as np
+
+>>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
@@ -13,11 +19,19 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
+<<<<<<< HEAD
 import pickle
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
+=======
+>>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from keras.optimizers import Adam
+from keras.preprocessing.image import ImageDataGenerator
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearnex import patch_sklearn
 import os
 import pickle
@@ -343,7 +357,6 @@ def modele_xgboost(X_train, X_test, y_train, y_test, booGrid=False):
 def confusion_heatmap(y_test, y_pred, modele_name):
     
     conf_mat = confusion_matrix(y_test, y_pred)
-    plt.figure(figsize=(15, 15))
     plt.figure(figsize=(15, 15)) 
     sns.heatmap(conf_mat, cmap = "coolwarm", annot=True, fmt="d")
    
@@ -356,6 +369,10 @@ def convertir_duree(secondes):
     minutes, secondes = divmod(secondes, 60)
     heures, minutes = divmod(minutes, 60)
     return heures, minutes, secondes
+<<<<<<< HEAD
+=======
+
+>>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
 def model_cnn(X_train, X_test, y_train, y_test, size):
 
     model_name = "cnn_model"
@@ -425,4 +442,25 @@ def model_cnn(X_train, X_test, y_train, y_test, size):
         pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
 
     loss, accuracy = model.evaluate(validation_generator)
+<<<<<<< HEAD
     print(f'Loss: {loss}, Accuracy: {accuracy}')
+=======
+    print(f'Loss: {loss}, Accuracy: {accuracy}')
+
+def get_features_importance(model, vectorizer):
+
+    features = vectorizer.get_feature_names_out()
+    feature_importance = np.abs(model.coef_)
+    features_importance = pd.DataFrame(data=feature_importance[0], index=features, columns=['importance'])
+    features_importance = features_importance.sort_values(by='importance', ascending=False)
+    features_importance = features_importance.head(10)
+
+    plt.figure(figsize=(12, 6))
+    sns.barplot(x=features_importance.index, y=features_importance['importance'])
+    plt.title("Importance des mots dans le modèle")
+    plt.xticks(rotation=45)
+    plt.xlabel("Mots")
+    plt.ylabel("Importance")
+    plt.tight_layout()
+    plt.savefig("reports/figures/features_importance.png", bbox_inches='tight')
+>>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30

@@ -115,7 +115,7 @@ def result_generation(preds, labels):
     print(f"F1 score:\t{F1:.4f}")
     print()
 
-def modele_bert(X_train, X_test, y_train, y_test, booGrid=False):
+def modele_bert(X_train, X_test, y_train, y_test):
 
     print("Modèlisation BERT\n")
 

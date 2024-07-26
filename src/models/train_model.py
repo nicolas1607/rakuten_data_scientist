@@ -40,6 +40,10 @@ def get_predictions(X_test, y_test, model, model_name):
 
 def optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, type='grid'):
     filename = "models/" + model_name + "_" + type + ".pkl"
+    
+    if type == 'grid' or type == 'bayes': 
+        model_name = str(model_name)+"_"+ type
+    
     if os.path.exists(filename):
         search = pickle.load(open(filename, "rb"))
     else:
@@ -271,7 +275,6 @@ def modele_knn_neighbors(X_train, X_test, y_train, y_test, booGrid=False):
 def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
     
     model_name = 'decisionTree'
-    if (booGrid): model_name += "_grid"
     
     if (not booGrid):
         print("Modélisation Arbre de Décision (hors gridSearch)\n")
@@ -454,12 +457,30 @@ def predict_proba_for_lime(model, texts, vectorizer):
     expit_scores = np.exp(decision_scores) / np.sum(np.exp(decision_scores), axis=1, keepdims=True)
     return expit_scores
 
-def interpretability(model, df, vectorizer):
+def interpretability(df):
     
-    texte = df['tokens'][3]
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.pipeline import make_pipeline
+    from sklearn.calibration import CalibratedClassifierCV
+        
+    vectorizer = TfidfVectorizer()
+    base_model = LinearSVC(C=0.7399651076649312, max_iter=10000)
+    model = CalibratedClassifierCV(base_model)  # Calibration pour ajouter predict_proba
+    pipeline = make_pipeline(vectorizer, model)
 
-    # Initialise l'explainer LIME
-    explainer = LimeTextExplainer(class_names=df['prdtypecode'].unique())
-    # Utilise la fonction de prédiction adaptée
-    explanation = explainer.explain_instance(texte, lambda x: predict_proba_for_lime(model, x, vectorizer), num_features=50, num_samples=100)
-    explanation.save_to_file('reports/figures/lime_explanation.html')
+    texts = df['tokens']
+    categories = df['prdtypecode']
+    pipeline.fit(texts, categories)
+
+    # Étape 3: Utiliser LIME pour expliquer les prédictions
+    explainer = LimeTextExplainer(class_names=pipeline.classes_)
+
+    # Choisir un exemple à expliquer
+    text_instance = df['tokens'][3]
+
+    # Expliquer la prédiction
+    exp = explainer.explain_instance(text_instance, pipeline.predict_proba, num_features=6)
+    
+    exp.save_to_file('reports/figures/lime_explanation.html')
+    
+    

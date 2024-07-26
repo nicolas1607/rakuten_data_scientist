@@ -11,7 +11,7 @@ X_train, X_test, y_train, y_test, vectorizer, df = pre_processing_texte(isResamp
 # linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
 #interpretability(linearSVM, df, vectorizer)
 #interpretability(linearSVM, X_test, y_train, df, vectorizer)
-interpretability(df)
+# interpretability(df)
 
 # Classification des produits (image) : modèles retenus
 # sequential = model_cnn(X_train, X_test, y_train, y_test, size=125)
@@ -43,7 +43,7 @@ interpretability(df)
 
 # Modèle texte n°6 : DecisionTreeClassifier
 # modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False)
-# modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=True)
+modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=True)
 
 # Modèle texte n°7 : KNeighborsClassifier
 # modele_knn_neighbors(X_train, X_test, y_train, y_test, booGrid=False)

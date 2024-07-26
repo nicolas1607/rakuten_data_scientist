@@ -40,6 +40,10 @@ def get_predictions(X_test, y_test, model, model_name):
 
 def optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, type='grid'):
     filename = "models/" + model_name + "_" + type + ".pkl"
+    
+    if type == 'grid' or type == 'bayes': 
+        model_name = str(model_name)+"_"+ type
+    
     if os.path.exists(filename):
         search = pickle.load(open(filename, "rb"))
     else:

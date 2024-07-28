@@ -3,14 +3,9 @@ import pickle
 import time
 import seaborn as sns
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
-import cv2
-import pandas as pd
-=======
 import pandas as pd
 import numpy as np
 
->>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.svm import SVC, LinearSVC
@@ -19,11 +14,6 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier
-<<<<<<< HEAD
-import pickle
-from sklearn.metrics import classification_report, confusion_matrix, f1_score
-=======
->>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import GridSearchCV
 from skopt import BayesSearchCV
@@ -33,18 +23,7 @@ from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearnex import patch_sklearn
-import os
-import pickle
-import time
-import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.metrics import classification_report, confusion_matrix, f1_score, accuracy_score
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from lime.lime_text import LimeTextExplainer
 
 # Intel(R) Extension for Scikit-learn
 patch_sklearn()
@@ -61,6 +40,10 @@ def get_predictions(X_test, y_test, model, model_name):
 
 def optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, type='grid'):
     filename = "models/" + model_name + "_" + type + ".pkl"
+    
+    if type == 'grid' or type == 'bayes': 
+        model_name = str(model_name)+"_"+ type
+    
     if os.path.exists(filename):
         search = pickle.load(open(filename, "rb"))
     else:
@@ -292,7 +275,6 @@ def modele_knn_neighbors(X_train, X_test, y_train, y_test, booGrid=False):
 def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
     
     model_name = 'decisionTree'
-    if (booGrid): model_name += "_grid"
     
     if (not booGrid):
         print("Modélisation Arbre de Décision (hors gridSearch)\n")
@@ -369,10 +351,7 @@ def convertir_duree(secondes):
     minutes, secondes = divmod(secondes, 60)
     heures, minutes = divmod(minutes, 60)
     return heures, minutes, secondes
-<<<<<<< HEAD
-=======
 
->>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
 def model_cnn(X_train, X_test, y_train, y_test, size):
 
     model_name = "cnn_model"
@@ -442,9 +421,6 @@ def model_cnn(X_train, X_test, y_train, y_test, size):
         pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
 
     loss, accuracy = model.evaluate(validation_generator)
-<<<<<<< HEAD
-    print(f'Loss: {loss}, Accuracy: {accuracy}')
-=======
     print(f'Loss: {loss}, Accuracy: {accuracy}')
 
 def get_features_importance(model, vectorizer):
@@ -463,4 +439,46 @@ def get_features_importance(model, vectorizer):
     plt.ylabel("Importance")
     plt.tight_layout()
     plt.savefig("reports/figures/features_importance.png", bbox_inches='tight')
->>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
+
+def predict_proba_for_lime(model, texts, vectorizer):
+    if isinstance(texts, str):
+        texts = [texts]
+    if isinstance(texts, list):
+        texts = np.array(texts)
+    if texts.ndim == 1:
+        texts = texts.reshape(-1, 1)
+    
+    # Vectorisation des textes
+    texts_vectorized = vectorizer.transform(texts.ravel())
+
+    decision_scores = model.decision_function(texts_vectorized)
+
+    # Convertir les scores de décision en probabilités
+    expit_scores = np.exp(decision_scores) / np.sum(np.exp(decision_scores), axis=1, keepdims=True)
+    return expit_scores
+
+def interpretability(df):
+    
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.pipeline import make_pipeline
+    from sklearn.calibration import CalibratedClassifierCV
+        
+    vectorizer = TfidfVectorizer()
+    base_model = LinearSVC(C=0.7399651076649312, max_iter=10000)
+    model = CalibratedClassifierCV(base_model)  # Calibration pour ajouter predict_proba
+    pipeline = make_pipeline(vectorizer, model)
+
+    texts = df['tokens']
+    categories = df['prdtypecode']
+    pipeline.fit(texts, categories)
+
+    # Étape 3: Utiliser LIME pour expliquer les prédictions
+    explainer = LimeTextExplainer(class_names=pipeline.classes_)
+
+    # Choisir un exemple à expliquer
+    text_instance = df['tokens'][3]
+
+    # Expliquer la prédiction
+    exp = explainer.explain_instance(text_instance, pipeline.predict_proba, num_features=6)
+    
+    exp.save_to_file('reports/figures/lime_explanation.html')

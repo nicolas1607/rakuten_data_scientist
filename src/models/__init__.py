@@ -63,12 +63,14 @@ from bert_model import *
 from model_res_net_50 import *
 
 # Pre-processing des données
-X_train, X_test, y_train, y_test = pre_processing_texte(isResampling=False)
-X_train, X_test, y_train, y_test = pre_processing_image(size=125)
+X_train, X_test, y_train, y_test, vectorizer, df = pre_processing_texte(isResampling=False)
+# X_train, X_test, y_train, y_test = pre_processing_image(size=125)
 
-# Classification des produits (texte) : modèles retenus
-# linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=True)
-# sgd = modele_sgd(X_train, X_test, y_train, y_test, booGrid=True)
+# Classification des produits (texte) : modèle retenu
+# linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
+#interpretability(linearSVM, df, vectorizer)
+#interpretability(linearSVM, X_test, y_train, df, vectorizer)
+# interpretability(df)
 
 # Classification des produits (image) : modèles retenus
 # sequential = model_cnn(X_train, X_test, y_train, y_test, size=125)
@@ -101,7 +103,7 @@ X_train, X_test, y_train, y_test = pre_processing_image(size=125)
 
 # Modèle texte n°6 : DecisionTreeClassifier
 # modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False)
-# modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=True)
+modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=True)
 
 # Modèle texte n°7 : KNeighborsClassifier
 # modele_knn_neighbors(X_train, X_test, y_train, y_test, booGrid=False)

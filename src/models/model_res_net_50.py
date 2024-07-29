@@ -78,9 +78,6 @@ def get_predictions(test_generator, y_test, model, model_name):
 
     label_encoder = LabelEncoder()
     label_encoder.fit_transform(y_test)
-
-    # y_test = test_generator.classes
-    y_test = y_test.astype(int)
     
     y_pred = y_pred.argmax(axis=1)
     y_pred = label_encoder.inverse_transform(y_pred)

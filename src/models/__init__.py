@@ -6,8 +6,8 @@ from model_res_net_50 import *
 ############################################################################################################
 
 # Pre-processing des données
-X_train, X_test, y_train, y_test, vectorizer, df = pre_processing_texte(isResampling=False)
-X_train, X_test, y_train, y_test = pre_processing_image(size=125)
+# X_train, X_test, y_train, y_test, vectorizer, df = pre_processing_texte(isResampling=False)
+# X_train, X_test, y_train, y_test = pre_processing_image(size=125)
 
 # Classification des produits (texte) : modèle retenu
 # linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)

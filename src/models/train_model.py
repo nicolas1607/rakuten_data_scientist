@@ -515,6 +515,6 @@ def interpretability(model, vectorizer, df):
     explainer = LimeTextExplainer(class_names=df['prdtypecode'].unique())
     explainer = explainer.explain_instance(text_instance, pipeline.predict_proba, num_features=6)
 
-    exp.save_to_file('reports/figures/lime_explanation.html')
+    explainer.save_to_file('reports/figures/lime_explanation.html')
     explainer.as_pyplot_figure()
     plt.show()

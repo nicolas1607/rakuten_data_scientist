@@ -153,7 +153,7 @@ def modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False):
         if os.path.exists("models/"+model_name+".pkl"):
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
-            model = MultinomialNB()
+            model = MultinomialNB(alpha=0.1, fit_prior=False, force_alpha=True)
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
@@ -174,7 +174,7 @@ def modele_complementNB(X_train, X_test, y_train, y_test, booGrid=False):
         if os.path.exists("models/"+model_name+".pkl"):
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
-            model = ComplementNB()
+            model = ComplementNB(alpha=0.5, fit_prior=True, force_alpha=True)
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
@@ -237,7 +237,7 @@ def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
         if os.path.exists("models/"+model_name+".pkl"):
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
-            model = SGDClassifier()
+            model = SGDClassifier(alpha=0.0001, loss='modified_huber', max_iter=2000, penalty='l2')
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
@@ -267,11 +267,10 @@ def modele_knn_neighbors(X_train, X_test, y_train, y_test, booGrid=False):
             print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
-        # print("best_model=", compare_models())
     else: 
         print("Modélisation du Knn \n")
         model = KNeighborsClassifier()
-        parametres = {'n_neighbors': [4, 5, 6]}
+        parametres = {'n_neighbors': [5, 10, 20], 'metric': ['euclidean', 'manhattan', 'minkowski']}
         optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     return None
@@ -289,7 +288,7 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
             start_time = time.time()
-            model = DecisionTreeClassifier()
+            model = DecisionTreeClassifier(criterion='gini')
             model.fit(X_train, y_train)
             end_time = time.time()
             heures, minutes, secondes = convertir_duree(end_time - start_time)
@@ -300,10 +299,7 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
     else: 
         print("Modélisation Arbre de Décision (gridSearch)\n")
         model = DecisionTreeClassifier()
-        parametres = {
-            #'max_depth': [4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 30, 40, 50, 70, 90, 120, 150],
-            'criterion': ['gini', 'entropy']
-        }
+        parametres = {'criterion': ['gini', 'entropy']}
         model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return model

@@ -28,13 +28,12 @@ def load_data():
 
 def prediction(classifier):
     model_mapping = {
-        'Logistic Regression': 'logistic_regression',
+        'LogisticRegression': 'logistic_regression',
         'MultinomialNB': 'multinomialNB',
         'ComplementNB': 'complementNB',
-        'LinearSVM': 'linear_svm',
-        'SGD': 'sgd',
-        'Decision Tree': 'decisionTree',
-        'KNN Neighbors': 'knn_neighbors',
+        'LinearSVC': 'linear_svm',
+        'SGDClassifier': 'sgd',
+        'DecisionTreeClassifier': 'decisionTree',
         'Sequential': 'sequential',
         'ResNet50': 'resnet50'
     }
@@ -109,7 +108,7 @@ if page == pages[3]:
     
 if page == pages[4]:
     st.markdown("## Classification des produits : texte")
-    choix_texte = ['Logistic Regression', 'MultinomialNB', 'ComplementNB', 'LinearSVM', 'SGD', 'Decision Tree', 'KNN Neighbors']
+    choix_texte = ['LogisticRegression', 'MultinomialNB', 'ComplementNB', 'LinearSVC', 'SGDClassifier', 'DecisionTreeClassifier']
     option_texte = st.selectbox('Choix du modèle', choix_texte)
 
     display_texte = st.radio('Que souhaitez-vous montrer sur la partie texte ?', ('Scores de performance', 'Matrice de confusion'))

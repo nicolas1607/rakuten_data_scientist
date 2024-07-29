@@ -73,14 +73,14 @@ st.title("Challenge Rakuten")
 st.sidebar.title("Challenge Rakuten")
 
 pages = [
-    "Introduction", 
-    "Exploration des données", 
-    "Data visualisation", 
-    "Pre-processing", 
-    "Modélisation (texte)", 
-    "Modélisation (image)", 
-    "Interprétabilité", 
-    "Conclusion"
+    "Introduction", # simplice
+    "Exploration des données", # riadh
+    "Data visualisation", # slimane
+    "Pre-processing", #nicolas
+    "Modélisation (texte)", # nicolas
+    "Modélisation (image)", # slimane
+    "Interprétabilité", # simplisse
+    "Conclusion" # riadh
 ]
 
 page = st.sidebar.radio("", pages)

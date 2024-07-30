@@ -34,8 +34,8 @@ def prediction(classifier):
         'LinearSVC': 'linear_svm',
         'SGDClassifier': 'sgd',
         'DecisionTreeClassifier': 'decisionTree',
-        'Sequential': 'sequential',
-        'ResNet50': 'resnet50'
+        'Sequential (faible augmentation des données)': 'sequential',
+        'ResNet50 (forte augmentation des données)': 'resnet50'
     }
     model_name = model_mapping[classifier]
     model = pickle.load(open(f'models/{model_name}.pkl', 'rb'))
@@ -83,6 +83,7 @@ pages = [
 ]
 
 page = st.sidebar.radio("", pages)
+st.sidebar.warning("Cohorte : Bootcamp DS de mai 2024\n\nNicolas Mormiche\nhttps://linkedin.com/in/mormichen\n\nRiadh Zidi\nhttps://linkedin.com/in/riadh\n\nSimplice Lolo Mvoumbi\nhttps://linkedin.com/in/simplice\n\nSlimane Chelouah\nhttps://linkedin.com/in/slimane")
 
 ### Introduction ###
 
@@ -108,6 +109,7 @@ if page == pages[3]:
     
 if page == pages[4]:
     st.markdown("## Classification des produits : texte")
+
     choix_texte = ['LogisticRegression', 'MultinomialNB', 'ComplementNB', 'LinearSVC', 'SGDClassifier', 'DecisionTreeClassifier']
     option_texte = st.selectbox('Choix du modèle', choix_texte)
 
@@ -125,21 +127,35 @@ if page == pages[4]:
 ### Modélisation (image) ###
         
 if page == pages[5]:
-    st.markdown("## Classification des produits : image")
-    choix_image = ['Sequential', 'ResNet50']
+    st.write("## Classification des produits : image")
+    st.write("La partie classification des images a été réalisé sur un ensemble de 84916 images (67932 pour l'ensemble d'entraînement et 16984 pour l'ensemble de test). Les images étant au format .jpg, en nuance de gris et de dimension 125x125 pixels suite au pre-processing.")
+    
+    st.write("#### 1. Présentation des modèles")
+    st.write("Pour se faire, nous avons utilisé deux modèles de Deep Learning de type CNN avec pour paramètres :")
+    st.code("num_classes = 27\nepochs = 20\nbatch_size = 8\nlearning_rate = 0.001\npatience = 4\nmin_lr=0.0001\n")
+    st.write("- Le modèle Sequential qui est le modèle de base de Keras")
+    st.code("model = Sequential()\nmodel.add(Conv2D(32, (3, 3), activation='relu', input_shape=(size, size, 3)))\nmodel.add(MaxPooling2D(pool_size=(2, 2)))\nmodel.add(Dropout(0.25))\nmodel.add(Conv2D(64, (3, 3), activation='relu'))\nmodel.add(MaxPooling2D(pool_size=(2, 2)))\nmodel.add(Dropout(0.25))\nmodel.add(Conv2D(128, (3, 3), activation='relu'))\nmodel.add(MaxPooling2D(pool_size=(2, 2)))\nmodel.add(Dropout(0.25))\nmodel.add(Flatten())\nmodel.add(Dense(512, activation='relu'))\nmodel.add(Dropout(0.5))\nmodel.add(Dense(num_classes, activation='softmax'))")
+    st.write("- Le modèle ResNet50 qui est un modèle pré-entraîné sur ImageNet")
+    st.code("base_model = ResNet50(\n    weights='imagenet', \n    include_top=False, \n    input_shape=(size, size, 3), \n    pooling='avg', \n    classes=num_classes, \n    classifier_activation='softmax', \n    input_tensor=None\n)\nx = base_model.output\nx = Dense(128, activation='relu')(x)\noutputs = Dense(num_classes, activation='softmax')(x)\nmodel = Model(inputs=base_model.input, outputs=outputs)")
+    
+    st.write("#### 2. Entraînement des modèles")
+    st.write("Les deux modèles ont été entraînés avec une fonction callback ReduceLROnPlateau pour réduire le taux d'apprentissage lorsque la fonction de perte cesse de diminuer au bout d'un certain nombre d'époque.")
+    st.code("reduce_lr_callback = ReduceLROnPlateau(\n    monitor='val_loss', \n    factor=0.2, \n    patience=patience, \n    min_lr=min_lr\n)")
+    st.write("Afin d'éviter un sur-apprentissage des données, nous avons réalisé deux types de data augmentation sur les ensembles d'entraînement et de test pour comparer les résultats obtenus.")
+    st.write("- Faible augmentation des données :")
+    st.code("train_datagen = ImageDataGenerator(\n    rescale=1./255,\n    horizontal_flip=True,\n    zoom_range=0.2\n)\ntest_datagen = ImageDataGenerator(rescale=1./255)")
+    st.write("- Forte augmentation des données :")
+    st.code("train_datagen = ImageDataGenerator(\n    rescale=0.1,\n    zoom_range=0.1,\n    rotation_range=10,\n    width_shift_range=0.1,\n    height_shift_range=0.1,\n    horizontal_flip=True\n)\ntest_datagen = ImageDataGenerator(rescale=0.1)")
+
+    st.write("#### 3. Résultats obtenus")
+    st.write("Pour des raisons de temps de calcul, nous avons choisi de ne pas afficher les scores de performance pour les modèles d'images. Vous pouvez cependant visualiser les résultats obtenus pour la fonction de perte et pour le score de performance en fonction du nombre d'époque.")
+    choix_image = ['Sequential (faible augmentation des données)', 'ResNet50 (forte augmentation des données)']
     option_image = st.selectbox('Choix du modèle', choix_image)
+    # model, model_name = prediction(option_image)
+    # st.image(f"reports/figures/{model_name}/plot_accuracy_and_loss.png")
 
-    display_image = st.radio('Que souhaitez-vous montrer sur la partie image ?', ('Scores de performance', 'Matrice de confusion'))
-
-    model, model_name = prediction(option_image)
-
-    if display_image == 'Scores de performance':
-        loss, accuracy, f1_score = scores_image(model, model_name, display_image)
-        st.write("Loss : ", loss)
-        st.write("Accuracy : ", accuracy)
-        st.write("F1 Score : ", f1_score)
-    elif display_image == 'Matrice de confusion':
-        st.image(f"reports/figures/matrice_de_confusion/matrice_confusion_heatmap_{model_name}.png")
+    st.write("#### 4. Modèle retenu")
+    st.write("Le modèle Sequential avec faible augmentation de donnée a été retenu pour la classification des images avec des scores (accuracy=0.4636 et f1_score=0.3583) proches de ceux proposés par Rakuten, tout en évitant un sur-apprentissage du modèle.")
 
 ### Interprétabilité ###
         

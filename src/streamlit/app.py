@@ -240,6 +240,7 @@ if page == pages[4]:
     display_texte = st.radio('Que souhaitez-vous montrer sur la partie texte ?', ('Scores de performance', 'Matrice de confusion'))
    
     model, model_name = prediction(option_texte)
+    #st.write(model, model_name)
     if display_texte == 'Scores de performance':
         #st.write(model, display_texte, X_test_texte, y_test_texte)
         accuracy, f1 = scores_texte(model, display_texte, X_test_texte, y_test_texte)
@@ -249,6 +250,8 @@ if page == pages[4]:
         st.write("Accuracy : ", accuracy)
         st.write("F1 Score : ", f1)
     elif display_texte == 'Matrice de confusion':
+        if (model_name !='logistic_regression') : model_name+="_grid"
+        #st.write("matrice_confusion_heatmap_"+model_name+".png")
         st.image(f"reports/figures/matrice_de_confusion/matrice_confusion_heatmap_{model_name}.png")
 
     

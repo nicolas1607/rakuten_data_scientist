@@ -4,8 +4,6 @@ import cv2
 import nltk
 import pandas as pd
 import matplotlib.pyplot as plt
-import cv2
-import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -17,7 +15,6 @@ from langdetect import detect, lang_detect_exception, DetectorFactory
 from bs4 import BeautifulSoup
 from collections import Counter
 from unidecode import unidecode
-from deep_translator import GoogleTranslator
 from wordcloud import WordCloud
 from tqdm import tqdm
 from scipy import sparse
@@ -110,22 +107,6 @@ def nuage_de_mots(df_result):
         plt.title(f'Nuage de mots pour la classe {classe}')
         plt.savefig(f"reports/figures/nuage_de_mot/{classe}.png", bbox_inches='tight')
 
-def translate(texte):
-    if len(texte) > 10000:
-        print("Texte trop long pour la traduction :", len(texte))
-        texte1 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[:4000])
-        texte2 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[4000:8000])
-        texte3 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[8000:12000])
-        texte = texte1 + texte2 + texte3
-    elif len(texte) > 5000:
-        print("Texte trop long pour la traduction :", len(texte))
-        texte1 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[:4000])
-        texte2 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[4000:8000])
-        texte = texte1 + texte2
-    else:
-        texte = GoogleTranslator(source=detect(texte), target='fr').translate(texte)
-    return texte
-
 def resample_data(X_train, y_train, booOverSampling):   
     
     print("Dimensions avant ré-échantillonnage:")
@@ -174,14 +155,6 @@ def pre_processing_texte(tokenizer_name=None, isResampling=False):
         df['descriptif_cleaned'] = df['descriptif'].progress_apply(clean_column_descriptif)
         df.to_csv('data/df_cleaned.csv')
 
-    # print("Traduction de la colonne descriptif\n")
-    # if os.path.exists("data/df_traducted.csv"):
-    #     df = pd.read_csv('data/df_traducted.csv')
-    #     df = df.fillna('')
-    # else:
-    #     df['descriptif_trad'] = df['descriptif_cleaned'].progress_apply(lambda row: translate(row), axis=1)
-    #     df.to_csv('data/df_traducted.csv')
-
     print("Lemmatisation de la colonne descriptif\n")
     if os.path.exists("data/df_lemmatized.csv"):
         df = pd.read_csv('data/df_lemmatized.csv')
@@ -207,8 +180,6 @@ def pre_processing_texte(tokenizer_name=None, isResampling=False):
         df_result = word_occurence_by_prdtypecode(df)
         nuage_de_mots(df_result)
 
-    # df = df.sample(frac=0.005, random_state=66)
-
     print("Répartition Train/Test du jeu de donnée\n")
     if tokenizer_name != 'bert':
         X_train, X_test, y_train, y_test = train_test_split(df['tokens'], df['prdtypecode'], test_size=0.2, random_state=66)
@@ -229,7 +200,14 @@ def pre_processing_texte(tokenizer_name=None, isResampling=False):
         else:
             X_train, y_train = resample_data(X_train, y_train, booOverSampling=True)
 
-    return X_train, X_test, y_train, y_test
+    if not os.path.exists('data/texte_preprocessed'):
+        os.makedirs('data/texte_preprocessed')
+        sparse.save_npz("data/texte_preprocessed/X_train.npz", X_train)
+        sparse.save_npz("data/texte_preprocessed/X_test.npz", X_test)
+        y_train.to_csv('data/texte_preprocessed/y_train.csv', index=False)
+        y_test.to_csv('data/texte_preprocessed/y_test.csv', index=False)
+    
+    return X_train, X_test, y_train, y_test, vectorizer, df
 
 def pre_processing_image(size):
 
@@ -246,6 +224,13 @@ def pre_processing_image(size):
     df['prdtypecode'] = df['prdtypecode'].astype(str)
 
     X_train, X_test, y_train, y_test = train_test_split(df['filepath'], df['prdtypecode'], test_size=0.20, random_state=66)
+
+    if not os.path.exists('data/image_preprocessed'):
+        os.makedirs('data/image_preprocessed')
+        X_train.to_csv('data/image_preprocessed/X_train.csv', index=False)
+        X_test.to_csv('data/image_preprocessed/X_test.csv', index=False)
+        y_train.to_csv('data/image_preprocessed/y_train.csv', index=False)
+        y_test.to_csv('data/image_preprocessed/y_test.csv', index=False)
 
     return X_train, X_test, y_train, y_test
 

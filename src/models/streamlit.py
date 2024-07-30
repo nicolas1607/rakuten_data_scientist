@@ -1,4 +1,5 @@
 import os
+import io
 import pickle
 import pandas as pd
 import streamlit as st
@@ -64,6 +65,10 @@ def scores_image(model, model_name, choice):
         # return pickle.load(open(f"models/{model_name}_predictions.pkl", "rb"))
         return confusion_matrix(y_test_image, model.predict(X_test_image))
 
+X_train = pd.read_csv('data/X_train.csv', index_col=0)
+Y_train = pd.read_csv('data/Y_train.csv', index_col=0)
+fusion = pd.merge(X_train, Y_train, left_index=True, right_index=True)
+
 X_train_texte, X_test_texte, y_train_texte, y_test_texte, X_train_image, X_test_image, y_train_image, y_test_image = load_data()
 
 ### Organisation du Streamlit ###
@@ -103,7 +108,32 @@ if page == pages[2]:
 ### Pre-processing ###
 
 if page == pages[3]:
-    st.write("")
+    st.write("## Pre-processing")
+    st.write("La partie pre-processing a été réalisée indépendamment sur un ensemble de 84916 descriptions et 84916 images de produit e-commerce.")
+
+    st.write("### 1. Descriptions des produits")
+    st.write("- **Gestion des valeurs nulles**")
+    st.code("fusion.info()")
+    buffer = io.StringIO()
+    fusion.info(buf=buffer)
+    s = buffer.getvalue()
+    st.text(s)
+    st.code("fusion.isna().sum()")
+    st.dataframe(fusion.isna().sum())
+    st.write("On remarque un total de 29800 lignes sur 84916 où la description est manquante. Pour éviter de les supprimer et donc de pénaliser notre jeu de donnée, nous avons décidé de fusionner les colonnes 'designation' et 'description' en une nouvelle colonne 'descriptif'.")
+
+    st.write("- **Détection des langues**")
+    st.write("Nous avons utilisé la librairie langdetect pour détecter la langue de chaque description, avec l'on retrouve des langues prédominantes tel que le français et l'anglais.")
+    st.image("reports/figures/lang_detect.png")
+    st.write("On remarque la présence de 9 modalités où la langue n'est pas reconnue. En effet, une fois la colonne 'descriptif' prétraitée à l'aide des méthodes NLP, aucun mot n'a été retenu ce qui semble indiqué que le commerçant n'a pas renseigné de description et de désignation avec des mots suffisamment explicite.")
+
+    st.write("- **Traitement naturel du langage (NLP)**")
+    st.write("Nous avons utilisé la librairie NLTK pour prétraiter les données textuelles. Voici un exemple de la transformation des données :")
+    st.code("# Retrait des espaces excessifs\ntexte = re.sub('\s{2,}', ' ', texte)\n\n# Mettre en minuscule\ntexte = texte.lower()\n\n# Supprimer les balises HTML\ntexte = BeautifulSoup(texte, 'html.parser').get_text()\n\n# Supprimer les nombres\ntexte = re.sub('\d+', '', texte)\n\n# Supprimer les accents\ntexte = unidecode(texte)\n\n# Supprimer les caractères spéciaux\ntexte = re.sub('[^a-zA-Z]', ' ', texte)\n\n# Supprimer les stopwords et les mots de moins de 4 lettres\nstop_words = set(stopwords.words())\ntexte = ' '.join([word for word in texte.split() if word not in stop_words])\ntexte = ' '.join([word for word in texte.split() if len(word) > 3])")
+    st.write("Histogramme des 10 mots les plus présents avec leur importance :")
+    st.image("reports/figures/features_importance.png")
+
+    st.write("- **Traitement des images**")
 
 ### Modélisation (texte) ###
     

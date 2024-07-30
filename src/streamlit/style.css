@@ -1,0 +1,26 @@
+<style>
+.custom-title-h1 {
+    font-size: 32px;
+}
+.custom-title-h2 {
+    font-size: 24px;
+}
+
+.custom-title-h3 {
+    font-size: 18px;
+}
+
+.custom-body {
+    font-size: 18px;
+}
+
+.custom-body-red {
+    font-size: 18px;
+    color: red;
+}
+
+.radio-text {
+    font-size: 20px;
+    color: blue;
+}
+</style>

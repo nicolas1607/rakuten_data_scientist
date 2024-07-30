@@ -7,7 +7,6 @@ from scipy import sparse
 from sklearn.metrics import confusion_matrix, f1_score
 from preprocessing import pre_processing_texte, pre_processing_image
 from model_res_net_50 import data_augmentation
-import pandas as pd
 
 def load_data():
     if not os.path.exists('data/texte_preprocessed'):
@@ -29,7 +28,7 @@ def load_data():
 
 def prediction(classifier):
     model_mapping = {
-        'Logistic Regression': 'logistic_regression',
+        'LogisticRegression': 'logistic_regression',
         'MultinomialNB': 'multinomialNB',
         'ComplementNB': 'complementNB',
         'LinearSVC': 'linear_svm',

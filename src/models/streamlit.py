@@ -76,8 +76,8 @@ pages = [
     "Exploration des données", # riadh
     "Data visualisation", # slimane
     "Pre-processing", #nicolas
-    "Modélisation (texte)", # nicolas
-    "Modélisation (image)", # slimane
+    "Modélisation (texte)", # slimane
+    "Modélisation (image)", # nicolas
     "Interprétabilité", # simplisse
     "Conclusion" # riadh
 ]
@@ -151,8 +151,8 @@ if page == pages[5]:
     st.write("Pour des raisons de temps de calcul, nous avons choisi de ne pas afficher les scores de performance pour les modèles d'images. Vous pouvez cependant visualiser les résultats obtenus pour la fonction de perte et pour le score de performance en fonction du nombre d'époque.")
     choix_image = ['Sequential (faible augmentation des données)', 'ResNet50 (forte augmentation des données)']
     option_image = st.selectbox('Choix du modèle', choix_image)
-    # model, model_name = prediction(option_image)
-    # st.image(f"reports/figures/{model_name}/plot_accuracy_and_loss.png")
+    model, model_name = prediction(option_image)
+    st.image(f"reports/figures/{model_name}/plot_accuracy_and_loss.png")
 
     st.write("#### 4. Modèle retenu")
     st.write("Le modèle Sequential avec faible augmentation de donnée a été retenu pour la classification des images avec des scores (accuracy=0.4636 et f1_score=0.3583) proches de ceux proposés par Rakuten, tout en évitant un sur-apprentissage du modèle.")

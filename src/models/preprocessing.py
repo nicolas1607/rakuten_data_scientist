@@ -6,10 +6,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import cv2
 import pandas as pd
-<<<<<<< HEAD
-=======
-
->>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
@@ -242,27 +238,6 @@ def pre_processing_texte(tokenizer_name=None, isResampling=False):
     
     return X_train, X_test, y_train, y_test, vectorizer, df
 
-<<<<<<< HEAD
-import os
-import pandas as pd
-from PIL import Image
-import numpy as np
-from sklearn.model_selection import train_test_split
-
-import os
-import numpy as np
-import gc
-from PIL import Image
-from sklearn.model_selection import train_test_split
-
-import os
-import numpy as np
-import gc
-from PIL import Image
-from sklearn.model_selection import train_test_split
-
-=======
->>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
 def pre_processing_image(size):
 
     input_path = 'data/images/image_train/'
@@ -296,18 +271,7 @@ def resize_images_folder(input_path, output_path, size):
     if len(os.listdir(output_path)) == 0:
         for index, filename in enumerate(os.listdir(input_path)):
             image = cv2.imread(input_path+filename, cv2.IMREAD_COLOR)
-<<<<<<< HEAD
-
-            # Passage en noir et blanc
-            # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-            # Erosion de l'image
-            # filtre = cv2.GaussianBlur(image, ksize = (3,3), sigmaX = 0)
-            # kernel = np.ones((3,3), np.uint8)
-            # image = cv2.erode(filtre, kernel)
-=======
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
->>>>>>> a3c244fea75605ce23eb8d2e6795d47a7e83cd30
 
             if image is not None:
                 image = cv2.resize(image, (size, size))

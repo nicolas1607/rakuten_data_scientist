@@ -1,5 +1,4 @@
 import os
-import io
 import pickle
 import pandas as pd
 import streamlit as st
@@ -65,6 +64,13 @@ def scores_image(model, model_name, choice):
         # return pickle.load(open(f"models/{model_name}_predictions.pkl", "rb"))
         return confusion_matrix(y_test_image, model.predict(X_test_image))
 
+def get_dataframe_image(X, y, output_path):
+    df = X.merge(y, left_index=True, right_index=True)
+    df['filepath'] = df.apply(lambda row: output_path + 'image_' + str(row['imageid']) + '_product_' + str(row['productid']) + '.jpg', axis=1)
+    df['prdtypecode'] = df['prdtypecode'].astype(str)
+    df = df[['filepath', 'prdtypecode']]
+    return df
+
 X_train = pd.read_csv('data/X_train.csv', index_col=0)
 Y_train = pd.read_csv('data/Y_train.csv', index_col=0)
 fusion = pd.merge(X_train, Y_train, left_index=True, right_index=True)
@@ -109,31 +115,39 @@ if page == pages[2]:
 
 if page == pages[3]:
     st.write("## Pre-processing")
-    st.write("La partie pre-processing a été réalisée indépendamment sur un ensemble de 84916 descriptions et 84916 images de produit e-commerce.")
+    st.write("La partie pre-processing a été réalisée indépendamment sur un ensemble de 84916 descriptions d'un côté et 84916 images de l'autre. Ces données représentent le jeu d'entraînement fournis par Rakuten qui nous servira de dataset de base pour la modélisation.")
 
     st.write("### 1. Descriptions des produits")
     st.write("- **Gestion des valeurs nulles**")
-    st.code("fusion.info()")
-    buffer = io.StringIO()
-    fusion.info(buf=buffer)
-    s = buffer.getvalue()
-    st.text(s)
-    st.code("fusion.isna().sum()")
-    st.dataframe(fusion.isna().sum())
-    st.write("On remarque un total de 29800 lignes sur 84916 où la description est manquante. Pour éviter de les supprimer et donc de pénaliser notre jeu de donnée, nous avons décidé de fusionner les colonnes 'designation' et 'description' en une nouvelle colonne 'descriptif'.")
-
-    st.write("- **Détection des langues**")
-    st.write("Nous avons utilisé la librairie langdetect pour détecter la langue de chaque description, avec l'on retrouve des langues prédominantes tel que le français et l'anglais.")
-    st.image("reports/figures/lang_detect.png")
-    st.write("On remarque la présence de 9 modalités où la langue n'est pas reconnue. En effet, une fois la colonne 'descriptif' prétraitée à l'aide des méthodes NLP, aucun mot n'a été retenu ce qui semble indiqué que le commerçant n'a pas renseigné de description et de désignation avec des mots suffisamment explicite.")
+    st.code("fusion.isna().mean()")
+    st.dataframe(fusion.isna().mean())
+    st.write("On remarque un total de 29800 lignes sur 84916, soit plus de 35%, où la description est manquante. Pour éviter de les supprimer et donc de pénaliser notre jeu de donnée, nous avons décidé de fusionner les colonnes 'designation' et 'description' en une nouvelle colonne 'descriptif'.")
 
     st.write("- **Traitement naturel du langage (NLP)**")
-    st.write("Nous avons utilisé la librairie NLTK pour prétraiter les données textuelles. Voici un exemple de la transformation des données :")
+    st.write("Nous avons utilisé la librairie NLTK et les méthodes NLP pour nettoyer les données textuelles :")
     st.code("# Retrait des espaces excessifs\ntexte = re.sub('\s{2,}', ' ', texte)\n\n# Mettre en minuscule\ntexte = texte.lower()\n\n# Supprimer les balises HTML\ntexte = BeautifulSoup(texte, 'html.parser').get_text()\n\n# Supprimer les nombres\ntexte = re.sub('\d+', '', texte)\n\n# Supprimer les accents\ntexte = unidecode(texte)\n\n# Supprimer les caractères spéciaux\ntexte = re.sub('[^a-zA-Z]', ' ', texte)\n\n# Supprimer les stopwords et les mots de moins de 4 lettres\nstop_words = set(stopwords.words())\ntexte = ' '.join([word for word in texte.split() if word not in stop_words])\ntexte = ' '.join([word for word in texte.split() if len(word) > 3])")
-    st.write("Histogramme des 10 mots les plus présents avec leur importance :")
-    st.image("reports/figures/features_importance.png")
+    st.write("Une lemmatisation et une tokenisation ont été réalisées pour affiner l'analyse du corpus de texte :")
+    st.code("# Lemmatisation\nlemmatizer = WordNetLemmatizer()\ndf['descriptif_cleaned'] = df['descriptif_cleaned'].progress_apply(lambda texte: ' '.join([lemmatizer.lemmatize(mot) for mot in texte.split()]))\n\n# Tokenisation\ndf['tokens'] = df['descriptif_cleaned'].progress_apply(word_tokenize)")
+    st.write("Ce qui nous permet d'obtenir un corpus de texte nettoyé, qui sera ensuite transformer en vecteurs numériques à l'aide de la méthode TfidfVectorizer pour les rendre exploitables par les modèles de machine learning.")   
+    df = pd.read_csv('data//df_tokenized.csv', index_col=0)
+    st.dataframe(df.head()[['descriptif', 'tokens']])
 
-    st.write("- **Traitement des images**")
+    st.write("- **Résultats obtenus**")
+    st.write("L’étape du traitement du langage nous a permis de passer d’une liste de mots de 222906 à 137099 après nettoyage. Aussi, pour mieux comprendre la variable cible, nous avons réalisé une étude sur les mots les plus fréquents présents par catégorie. ")
+    st.image("reports/figures/features_importance.png")
+    st.write("Nous avons utilisé la librairie langdetect pour détecter la langue de chaque description, où on retrouve des langues prédominantes tel que le français et l'anglais soit plus de 88% du corpus de texte.")
+    st.image("reports/figures/lang_detect.png")
+    st.write("On remarque la présence de 9 modalités où la langue n'est pas reconnue. En effet, une fois la colonne 'descriptif' prétraitée à l'aide des méthodes NLP, aucun mot n'a été retenu ce qui semble indiqué que le commerçant n'a pas renseigné de description et de désignation avec des mots suffisamment explicite.")
+    st.write("Afin de mieux comprendre les codes types, nous avons réalisé des nuages de mots afin de se faire une idée plus claire sur le contenu des catégories. Voici un exemple de la classe 2583 qui est majoritaire :")
+    st.image("reports/figures/nuage_de_mot/2583.png")
+
+    st.write("### 2. Images des produits")
+    st.write("Les images ont été redimensionnées en 125x125 pixels en les passant en nuance de gris :")
+    st.code("input_path = 'data/images/image_train/'\noutput_path = 'data/images/image_train_preprocessed/'\n\nimage = cv2.imread(input_path+filename, cv2.IMREAD_COLOR)\nimage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)\nimage = cv2.resize(image, (125, 125))\n\ncv2.imwrite(output_path+filename, image)\n")
+    st.write("Nous avons ensuite crée un nouveau dataframe avec les chemins des images et leur label associé :")
+    st.code("df = X.merge(y, left_index=True, right_index=True)\ndf['filepath'] = df.apply(lambda row: output_path + 'image_' + str(row['imageid']) + '_product_' + str(row['productid']) + '.jpg', axis=1)\ndf['prdtypecode'] = df['prdtypecode'].astype(str)\ndf = df[['filepath', 'prdtypecode']]\ndf.head()")
+    df = get_dataframe_image(X_train, Y_train, 'data/images/image_train_preprocessed/')
+    st.dataframe(df.head())
 
 ### Modélisation (texte) ###
     

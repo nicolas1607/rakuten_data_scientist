@@ -62,19 +62,20 @@ from train_model import *
 from bert_model import *
 from model_res_net_50 import *
 
+############################################################################################################
+
 # Pre-processing des données
 X_train, X_test, y_train, y_test, vectorizer, df = pre_processing_texte(isResampling=False)
-# X_train, X_test, y_train, y_test = pre_processing_image(size=125)
+X_train, X_test, y_train, y_test = pre_processing_image(size=125)
 
 # Classification des produits (texte) : modèle retenu
-# linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
-#interpretability(linearSVM, df, vectorizer)
-#interpretability(linearSVM, X_test, y_train, df, vectorizer)
-# interpretability(df)
+linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
+interpretability(linearSVM, vectorizer, df)
 
-# Classification des produits (image) : modèles retenus
-# sequential = model_cnn(X_train, X_test, y_train, y_test, size=125)
-# resnet50 = model_resnet50(X_train, X_test, y_train, y_test, size=125)
+# Classification des produits (image) : modèle retenu
+sequential = model_cnn(X_train, X_test, y_train, y_test, size=125)
+
+############################################################################################################
 
 # Modèle texte n°1 : Logistic Regression
 # logistic_regression = modele_logistic_regression(X_train, X_test, y_train, y_test, booGrid=False)
@@ -103,7 +104,7 @@ X_train, X_test, y_train, y_test, vectorizer, df = pre_processing_texte(isResamp
 
 # Modèle texte n°6 : DecisionTreeClassifier
 # modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False)
-modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=True)
+# modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=True)
 
 # Modèle texte n°7 : KNeighborsClassifier
 # modele_knn_neighbors(X_train, X_test, y_train, y_test, booGrid=False)
@@ -120,3 +121,11 @@ modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=True)
 # Modèle texte n°10 : BERT
 # X_train, X_test, y_train, y_test = pre_processing_texte(tokenizer_name='bert')
 # modele_bert(X_train, X_test, y_train, y_test, booGrid=False)
+
+############################################################################################################
+
+# Modèle image n°1 : Sequential
+# sequential = model_cnn(X_train, X_test, y_train, y_test, size=125)
+
+# Modèle image n°2 : ResNet50
+# resnet50 = model_resnet50(X_train, X_test, y_train, y_test, size=125)

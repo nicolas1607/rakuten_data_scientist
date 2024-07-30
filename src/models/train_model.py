@@ -5,6 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import tensorflow_addons as tfa
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
@@ -21,8 +22,11 @@ from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import ReduceLROnPlateau
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearnex import patch_sklearn
+from sklearn.pipeline import make_pipeline
+from sklearn.calibration import CalibratedClassifierCV
 from lime.lime_text import LimeTextExplainer
 
 # Intel(R) Extension for Scikit-learn
@@ -149,7 +153,7 @@ def modele_multinomialNB(X_train, X_test, y_train, y_test, booGrid=False):
         if os.path.exists("models/"+model_name+".pkl"):
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
-            model = MultinomialNB()
+            model = MultinomialNB(alpha=0.1, fit_prior=False, force_alpha=True)
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
@@ -170,7 +174,7 @@ def modele_complementNB(X_train, X_test, y_train, y_test, booGrid=False):
         if os.path.exists("models/"+model_name+".pkl"):
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
-            model = ComplementNB()
+            model = ComplementNB(alpha=0.5, fit_prior=True, force_alpha=True)
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
@@ -233,7 +237,7 @@ def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
         if os.path.exists("models/"+model_name+".pkl"):
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
-            model = SGDClassifier()
+            model = SGDClassifier(alpha=0.0001, loss='modified_huber', max_iter=2000, penalty='l2')
             model.fit(X_train, y_train)
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
@@ -263,11 +267,10 @@ def modele_knn_neighbors(X_train, X_test, y_train, y_test, booGrid=False):
             print("Temps d'entrainement du modèle :",f"{heures} heures, {minutes} minutes, et {secondes} secondes\n")
             pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
         get_predictions(X_test, y_test, model, model_name)
-        # print("best_model=", compare_models())
     else: 
         print("Modélisation du Knn \n")
         model = KNeighborsClassifier()
-        parametres = {'n_neighbors': [4, 5, 6]}
+        parametres = {'n_neighbors': [5, 10, 20], 'metric': ['euclidean', 'manhattan', 'minkowski']}
         optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres)
 
     return None
@@ -285,7 +288,7 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
             model = pickle.load(open("models/"+model_name+".pkl", "rb"))
         else:
             start_time = time.time()
-            model = DecisionTreeClassifier()
+            model = DecisionTreeClassifier(criterion='gini')
             model.fit(X_train, y_train)
             end_time = time.time()
             heures, minutes, secondes = convertir_duree(end_time - start_time)
@@ -296,10 +299,7 @@ def modele_decisionTree(X_train, X_test, y_train, y_test, booGrid=False):
     else: 
         print("Modélisation Arbre de Décision (gridSearch)\n")
         model = DecisionTreeClassifier()
-        parametres = {
-            #'max_depth': [4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 30, 40, 50, 70, 90, 120, 150],
-            'criterion': ['gini', 'entropy']
-        }
+        parametres = {'criterion': ['gini', 'entropy']}
         model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
 
     return model
@@ -354,41 +354,25 @@ def convertir_duree(secondes):
 
 def model_cnn(X_train, X_test, y_train, y_test, size):
 
-    model_name = "cnn_model"
+    model_name = "sequential"
 
     num_classes = 27
     epochs = 20
     batch_size = 32
     learning_rate = 0.001
-    img_size = (size, size)
-
-    train_datagen = ImageDataGenerator(rescale=1./255, horizontal_flip=True, zoom_range=0.2)
-    test_datagen = ImageDataGenerator(rescale=1./255)
+    patience = 4
 
     train_df = pd.DataFrame({'filepath': X_train, 'prdtypecode': y_train})
     test_df = pd.DataFrame({'filepath': X_test, 'prdtypecode': y_test})
 
-    train_generator = train_datagen.flow_from_dataframe(
-        dataframe=train_df,
-        x_col='filepath',
-        y_col='prdtypecode',
-        target_size=img_size,
-        batch_size=batch_size,
-        class_mode='categorical'
-    )
-
-    validation_generator = test_datagen.flow_from_dataframe(
-        dataframe=test_df,
-        x_col='filepath',
-        y_col='prdtypecode',
-        target_size=img_size,
-        batch_size=batch_size,
-        class_mode='categorical'
-    )
+    train_generator, test_generator = data_augmentation(train_df, test_df, batch_size, size)
 
     if os.path.exists("models/"+model_name+".pkl"):
         model = pickle.load(open("models/"+model_name+".pkl", "rb"))
+        model_history = pickle.load(open("models/"+model_name+"_history.pkl", "rb"))
     else:
+        reduce_lr_callback = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=patience, min_lr=0.0001)
+
         model = Sequential()
 
         model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(size, size, 3)))
@@ -408,20 +392,74 @@ def model_cnn(X_train, X_test, y_train, y_test, size):
         model.add(Dropout(0.5))
         model.add(Dense(num_classes, activation='softmax'))
 
-        model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
+        print(model.summary())
 
-        model.fit(
+        model.compile(
+            optimizer=Adam(learning_rate=learning_rate), 
+            loss='categorical_crossentropy', 
+            metrics=['accuracy', tfa.metrics.F1Score(num_classes=27, name='f1_score')]
+        )
+
+        model_history = model.fit(
             train_generator,
-            steps_per_epoch=train_generator.n // batch_size,
             epochs=epochs,
-            validation_data=validation_generator,
-            validation_steps=validation_generator.n // batch_size
+            validation_data=test_generator,
+            callbacks=[reduce_lr_callback]
         )
 
         pickle.dump(model, open("models/"+model_name+".pkl", "wb"))
+        pickle.dump(model_history.history, open("models/"+model_name+"_history.pkl", "wb"))
 
-    loss, accuracy = model.evaluate(validation_generator)
-    print(f'Loss: {loss}, Accuracy: {accuracy}')
+    plot_results(model_history)
+
+    loss, accuracy, f1_score = model.evaluate(test_generator)
+    print(f'Loss: {loss}, Accuracy: {accuracy}, F1 Score: {f1_score}')
+
+def data_augmentation(train_df, test_df, batch_size, size):
+
+    train_datagen = ImageDataGenerator(rescale=1./255, horizontal_flip=True, zoom_range=0.2)
+    test_datagen = ImageDataGenerator(rescale=1./255)
+
+    train_generator = train_datagen.flow_from_dataframe(
+        train_df,
+        x_col='filepath',
+        y_col='prdtypecode',
+        target_size=(size, size),
+        batch_size=batch_size,
+        class_mode='categorical'
+    )
+
+    test_generator = test_datagen.flow_from_dataframe(
+        test_df,
+        x_col='filepath',
+        y_col='prdtypecode',
+        target_size=(size, size),
+        batch_size=batch_size,
+        class_mode='categorical'
+    )
+
+    return train_generator, test_generator
+
+def plot_results(model_history):
+
+    plt.figure(figsize=(12,4))
+    plt.subplot(121)
+    plt.plot(model_history['loss'])
+    plt.plot(model_history['val_loss'])
+    plt.title('Model loss by epoch')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='right')
+
+    plt.subplot(122)
+    plt.plot(model_history['accuracy'])
+    plt.plot(model_history['val_accuracy'])
+    plt.title('Model accuracy by epoch')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='right')
+
+    plt.savefig("reports/figures/sequential/plot_accuracy_and_loss.png", bbox_inches='tight')
 
 def get_features_importance(model, vectorizer):
 
@@ -457,24 +495,23 @@ def predict_proba_for_lime(model, texts, vectorizer):
     expit_scores = np.exp(decision_scores) / np.sum(np.exp(decision_scores), axis=1, keepdims=True)
     return expit_scores
 
-def interpretability(df):
+def interpretability(model, vectorizer, df):
     
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.pipeline import make_pipeline
-    from sklearn.calibration import CalibratedClassifierCV
-        
-    vectorizer = TfidfVectorizer()
-    base_model = LinearSVC(C=0.7399651076649312, max_iter=10000)
-    model = CalibratedClassifierCV(base_model)  # Calibration pour ajouter predict_proba
-    pipeline = make_pipeline(vectorizer, model)
+    text_instance = df['tokens'][3]
+
+    # Calibration pour ajouter predict_proba
+    model = CalibratedClassifierCV(model)
 
     texts = df['tokens']
     categories = df['prdtypecode']
+
+    pipeline = make_pipeline(vectorizer, model)
     pipeline.fit(texts, categories)
 
-    # Étape 3: Utiliser LIME pour expliquer les prédictions
-    explainer = LimeTextExplainer(class_names=pipeline.classes_)
+    explainer = LimeTextExplainer(class_names=df['prdtypecode'].unique())
+    explainer = explainer.explain_instance(text_instance, pipeline.predict_proba, num_features=6)
 
+<<<<<<< HEAD
     # Choisir un exemple à expliquer
     text_instance = df['tokens'][3]
 
@@ -482,3 +519,8 @@ def interpretability(df):
     exp = explainer.explain_instance(text_instance, pipeline.predict_proba, num_features=6)
     
     exp.save_to_file('reports/figures/lime_explanation.html')
+=======
+    explainer.save_to_file('reports/figures/lime_explanation.html')
+    explainer.as_pyplot_figure()
+    plt.show()
+>>>>>>> 71e139978d4e3930cf3541974bcda20a8ef3881f

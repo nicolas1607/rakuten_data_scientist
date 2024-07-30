@@ -233,6 +233,13 @@ def pre_processing_texte(tokenizer_name=None, isResampling=False):
         else:
             X_train, y_train = resample_data(X_train, y_train, booOverSampling=True)
 
+    if not os.path.exists('data/texte_preprocessed'):
+        os.makedirs('data/texte_preprocessed')
+        sparse.save_npz("data/texte_preprocessed/X_train.npz", X_train)
+        sparse.save_npz("data/texte_preprocessed/X_test.npz", X_test)
+        y_train.to_csv('data/texte_preprocessed/y_train.csv', index=False)
+        y_test.to_csv('data/texte_preprocessed/y_test.csv', index=False)
+    
     return X_train, X_test, y_train, y_test, vectorizer, df
 
 <<<<<<< HEAD
@@ -271,6 +278,13 @@ def pre_processing_image(size):
     df['prdtypecode'] = df['prdtypecode'].astype(str)
 
     X_train, X_test, y_train, y_test = train_test_split(df['filepath'], df['prdtypecode'], test_size=0.20, random_state=66)
+
+    if not os.path.exists('data/image_preprocessed'):
+        os.makedirs('data/image_preprocessed')
+        X_train.to_csv('data/image_preprocessed/X_train.csv', index=False)
+        X_test.to_csv('data/image_preprocessed/X_test.csv', index=False)
+        y_train.to_csv('data/image_preprocessed/y_train.csv', index=False)
+        y_test.to_csv('data/image_preprocessed/y_test.csv', index=False)
 
     return X_train, X_test, y_train, y_test
 

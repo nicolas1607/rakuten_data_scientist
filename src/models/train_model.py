@@ -245,7 +245,7 @@ def modele_sgd(X_train, X_test, y_train, y_test, booGrid=False):
         print("Modèlisation SGDClassifier (gridSearch)\n")
         model = SGDClassifier()
         parametres = {'loss': ['hinge', 'log_loss', 'modified_huber', 'squared_hinge', 'perceptron'], 'penalty': ['l2', 'l1', 'elasticnet'], 'alpha': [0.0001, 0.001, 0.01], 'max_iter': [1000, 2000, 3000, 5000, 10000]}
-        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'grid')
+        model = optimisation(X_train, X_test, y_train, y_test, model, model_name, parametres, 'bayes')
 
     return model
 
@@ -413,6 +413,12 @@ def model_cnn(X_train, X_test, y_train, y_test, size):
     plot_results(model_history)
 
     loss, accuracy, f1_score = model.evaluate(test_generator)
+    results = [loss, accuracy, f1_score]
+    
+    file = open("reports/figures/sequential/results","wb")
+    pickle.dump(results, file)
+    file.close()
+    
     print(f'Loss: {loss}, Accuracy: {accuracy}, F1 Score: {f1_score}')
 
 def data_augmentation(train_df, test_df, batch_size, size):

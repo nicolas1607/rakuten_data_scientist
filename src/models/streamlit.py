@@ -7,6 +7,7 @@ from scipy import sparse
 from sklearn.metrics import confusion_matrix, f1_score
 from preprocessing import pre_processing_texte, pre_processing_image
 from model_res_net_50 import data_augmentation
+import pandas as pd
 
 def load_data():
     if not os.path.exists('data/texte_preprocessed'):
@@ -28,7 +29,7 @@ def load_data():
 
 def prediction(classifier):
     model_mapping = {
-        'LogisticRegression': 'logistic_regression',
+        'Logistic Regression': 'logistic_regression',
         'MultinomialNB': 'multinomialNB',
         'ComplementNB': 'complementNB',
         'LinearSVC': 'linear_svm',
@@ -104,7 +105,25 @@ if page == pages[0]:
 ### Exploration des données ###    
 
 if page == pages[1]:
-    st.write("")
+    st.markdown("## Exploration des données")
+    visualisation_options = [
+        "Sélectionner une visualisation",
+        "Heatmap des corrélations",
+        "Histogramme avec estimation de la densité de prdtypecode",
+        "Histogramme de prdtypecode",
+        "Nuage de points entre productid et prdtypecode",
+    ]
+
+    choice = st.selectbox("Choisir une visualisation à afficher", visualisation_options)
+    if st.button('Afficher la visualisation'):
+        if choice == "Heatmap des corrélations":
+            st.image("reports/figures/heatmap.png", caption='Corrélation entre toutes les variables quantitatives')
+        elif choice == "Histogramme avec estimation de la densité de prdtypecode":
+            st.image("reports/figures/histogramme_avec_estimation_densite.png", caption='Répartition des valeurs de prdtypecode avec estimation de la densité')
+        elif choice == "Histogramme de prdtypecode":
+            st.image("reports/figures/histogramme.png", caption='Répartition des valeurs de prdtypecode')
+        elif choice == "Nuage de points entre productid et prdtypecode":
+            st.image("reports/figures/scatterplot.png", caption='Catégorie du produit en fonction du productid')
 
 ### Data visualisation ###
 
@@ -153,7 +172,6 @@ if page == pages[3]:
     
 if page == pages[4]:
     st.markdown("## Classification des produits : texte")
-
     choix_texte = ['LogisticRegression', 'MultinomialNB', 'ComplementNB', 'LinearSVC', 'SGDClassifier', 'DecisionTreeClassifier']
     option_texte = st.selectbox('Choix du modèle', choix_texte)
 
@@ -209,4 +227,5 @@ if page == pages[6]:
 ### Conclusion ###
             
 if page == pages[7]:
-    st.write("")
+    st.markdown("## Conclusion")
+    st.write("Le projet a mis en lumière l'importance de la classification multiclasse et multimodale (texte et image) pour atteindre les objectifs du Challenge Rakuten. Le pre-processing s'est avéré crucial pour optimiser les données, réduisant ainsi le temps d’entraînement des modèles et améliorant leurs performances. Nous avons expérimenté divers modèles de Machine Learning pour le texte et de Deep Learning pour les images, optant finalement pour LinearSVM et Resnet50 en raison de leurs bonnes performances. Bien que des améliorations soient possibles, notamment dans le traitement des images et l'intégration de méthodes multimodales, les résultats obtenus fournissent une base solide pour de futurs développements et optimisations.")

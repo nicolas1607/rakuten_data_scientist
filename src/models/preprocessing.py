@@ -6,7 +6,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import cv2
 import pandas as pd
-
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
@@ -23,7 +22,10 @@ from tqdm import tqdm
 from scipy import sparse
 from imblearn.over_sampling import ADASYN
 from imblearn.under_sampling import EditedNearestNeighbours
-
+import numpy as np
+from PIL import Image
+import gc
+import pickle
 nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('punkt')

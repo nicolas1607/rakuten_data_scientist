@@ -4,8 +4,7 @@ import cv2
 import nltk
 import pandas as pd
 import matplotlib.pyplot as plt
-import cv2
-import pandas as pd
+
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
@@ -16,16 +15,12 @@ from langdetect import detect, lang_detect_exception, DetectorFactory
 from bs4 import BeautifulSoup
 from collections import Counter
 from unidecode import unidecode
-from deep_translator import GoogleTranslator
 from wordcloud import WordCloud
 from tqdm import tqdm
 from scipy import sparse
 from imblearn.over_sampling import ADASYN
 from imblearn.under_sampling import EditedNearestNeighbours
-import numpy as np
-from PIL import Image
-import gc
-import pickle
+
 nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('punkt')
@@ -112,22 +107,6 @@ def nuage_de_mots(df_result):
         plt.title(f'Nuage de mots pour la classe {classe}')
         plt.savefig(f"reports/figures/nuage_de_mot/{classe}.png", bbox_inches='tight')
 
-def translate(texte):
-    if len(texte) > 10000:
-        print("Texte trop long pour la traduction :", len(texte))
-        texte1 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[:4000])
-        texte2 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[4000:8000])
-        texte3 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[8000:12000])
-        texte = texte1 + texte2 + texte3
-    elif len(texte) > 5000:
-        print("Texte trop long pour la traduction :", len(texte))
-        texte1 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[:4000])
-        texte2 = GoogleTranslator(source=detect(texte), target='fr').translate(texte[4000:8000])
-        texte = texte1 + texte2
-    else:
-        texte = GoogleTranslator(source=detect(texte), target='fr').translate(texte)
-    return texte
-
 def resample_data(X_train, y_train, booOverSampling):   
     
     print("Dimensions avant ré-échantillonnage:")
@@ -175,14 +154,6 @@ def pre_processing_texte(tokenizer_name=None, isResampling=False):
     else:
         df['descriptif_cleaned'] = df['descriptif'].progress_apply(clean_column_descriptif)
         df.to_csv('data/df_cleaned.csv')
-
-    # print("Traduction de la colonne descriptif\n")
-    # if os.path.exists("data/df_traducted.csv"):
-    #     df = pd.read_csv('data/df_traducted.csv')
-    #     df = df.fillna('')
-    # else:
-    #     df['descriptif_trad'] = df['descriptif_cleaned'].progress_apply(lambda row: translate(row), axis=1)
-    #     df.to_csv('data/df_traducted.csv')
 
     print("Lemmatisation de la colonne descriptif\n")
     if os.path.exists("data/df_lemmatized.csv"):

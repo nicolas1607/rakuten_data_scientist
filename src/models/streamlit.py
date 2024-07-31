@@ -263,7 +263,6 @@ if page == pages[5]:
     
     display_texte = st.radio('Que souhaitez-vous montrer sur la partie texte ?', ('Scores de performance', 'Matrice de confusion', 'Fonction de perte et score de performance en fonction du nombre d\'époque'))
 
-    # get model_name
     if option_image == 'Sequential (faible augmentation des données)':
         model_name = 'sequential'
     elif option_image == 'ResNet50 (forte augmentation des données)':

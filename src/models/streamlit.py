@@ -6,11 +6,11 @@ import streamlit as st
 from scipy import sparse
 from sklearn.metrics import confusion_matrix, f1_score
 from preprocessing import pre_processing_texte, pre_processing_image
-from model_res_net_50 import data_augmentation
+from keras.preprocessing.image import ImageDataGenerator
 
 def load_data():
     if not os.path.exists('data/texte_preprocessed'):
-        X_train_texte, X_test_texte, y_train_texte, y_test_texte, vectorizer, df = pre_processing_texte(isResampling=False)
+        X_train_texte, X_test_texte, y_train_texte, y_test_texte, _, _ = pre_processing_texte(isResampling=False)
     else:
         X_train_texte = sparse.load_npz("data/texte_preprocessed/X_train.npz")
         X_test_texte = sparse.load_npz("data/texte_preprocessed/X_test.npz")
@@ -46,9 +46,12 @@ def scores_texte(model, choice, X_test_texte, y_test_texte):
         return round(model.score(X_test_texte, y_test_texte), 4), round(f1_score(y_test_texte, model.predict(X_test_texte), average='weighted'), 4)
     elif choice == 'Matrice de confusion':
         return confusion_matrix(y_test_texte, model.predict(X_test_texte))
-    
-def scores_image(model, model_name, choice):
-    if choice == 'Scores de performance':
+
+def scores_image(model_name):
+
+    if os.path.exists(f"reports/figures/{model_name}/results.pkl"):
+        results = pickle.load(open(f'reports/figures/{model_name}/results.pkl', 'rb'))
+    else:
         X_train_image_list = X_train_image['filepath'].tolist() if isinstance(X_train_image, pd.DataFrame) else X_train_image
         y_train_image_list = y_train_image['prdtypecode'].astype(str).tolist() if isinstance(y_train_image, pd.DataFrame) else y_train_image
         X_test_image_list = X_test_image['filepath'].tolist() if isinstance(X_test_image, pd.DataFrame) else X_test_image
@@ -57,12 +60,24 @@ def scores_image(model, model_name, choice):
         train_df = pd.DataFrame({'filepath': X_train_image_list, 'prdtypecode': y_train_image_list})
         test_df = pd.DataFrame({'filepath': X_test_image_list, 'prdtypecode': y_test_image_list})
         
-        train_generator, test_generator = data_augmentation(train_df, test_df, 8, 125)
+        _, test_generator = data_augmentation(model_name, train_df, test_df, 8, 125)
+
+        if model_name == 'sequential':
+            model = pickle.load(open("models/sequential.pkl", "rb"))
+        else:
+            model = pickle.load(open("models/resnet50.pkl", "rb"))
         
-        return model.evaluate(test_generator)
-    elif choice == 'Matrice de confusion':
-        # return pickle.load(open(f"models/{model_name}_predictions.pkl", "rb"))
-        return confusion_matrix(y_test_image, model.predict(X_test_image))
+        results = model.evaluate(test_generator)
+        results = dict(zip(model.metrics_names, results))
+        pickle.dump(results, open(f'reports/figures/{model_name}/results.pkl', 'wb'))
+
+    return results['loss'], results['accuracy'], results['f1_score']
+
+def get_dataframe_texte():
+    X_train = pd.read_csv('data/X_train.csv', index_col=0)
+    Y_train = pd.read_csv('data/Y_train.csv', index_col=0)
+    fusion = pd.merge(X_train, Y_train, left_index=True, right_index=True)
+    return fusion
 
 def get_dataframe_image(X, y, output_path):
     df = X.merge(y, left_index=True, right_index=True)
@@ -71,9 +86,42 @@ def get_dataframe_image(X, y, output_path):
     df = df[['filepath', 'prdtypecode']]
     return df
 
-X_train = pd.read_csv('data/X_train.csv', index_col=0)
-Y_train = pd.read_csv('data/Y_train.csv', index_col=0)
-fusion = pd.merge(X_train, Y_train, left_index=True, right_index=True)
+def data_augmentation(model_name, train_df, test_df, batch_size, size):
+
+    if model_name == 'sequential':
+        train_datagen = ImageDataGenerator(rescale=1./255, horizontal_flip=True, zoom_range=0.2)
+        test_datagen = ImageDataGenerator(rescale=1./255)
+    elif model_name == 'resnet50':
+        train_datagen = ImageDataGenerator(
+            rescale=0.1,
+            zoom_range=0.1,
+            rotation_range=10,
+            width_shift_range=0.1,
+            height_shift_range=0.1,
+            horizontal_flip=True,
+        )
+
+        test_datagen = ImageDataGenerator(rescale=0.1)
+
+    train_generator = train_datagen.flow_from_dataframe(
+        train_df,
+        x_col='filepath',
+        y_col='prdtypecode',
+        target_size=(size, size),
+        batch_size=batch_size,
+        class_mode='categorical'
+    )
+
+    test_generator = test_datagen.flow_from_dataframe(
+        test_df,
+        x_col='filepath',
+        y_col='prdtypecode',
+        target_size=(size, size),
+        batch_size=batch_size,
+        class_mode='categorical'
+    )
+
+    return train_generator, test_generator
 
 X_train_texte, X_test_texte, y_train_texte, y_test_texte, X_train_image, X_test_image, y_train_image, y_test_image = load_data()
 
@@ -94,7 +142,7 @@ pages = [
 ]
 
 page = st.sidebar.radio("", pages)
-st.sidebar.warning("Cohorte : Bootcamp DS de mai 2024\n\nNicolas Mormiche\nhttps://linkedin.com/in/mormichen\n\nRiadh Zidi\nhttps://linkedin.com/in/riadh\n\nSimplice Lolo Mvoumbi\nhttps://linkedin.com/in/simplice\n\nSlimane Chelouah\nhttps://linkedin.com/in/slimane")
+st.sidebar.warning("Cohorte : Bootcamp DS de mai 2024\n\n**Nicolas Mormiche**\nhttps://linkedin.com/in/mormichen\n\n**Riadh Zidi**\nhttps://linkedin.com/in/riadh\n\n**Simplice Lolo Mvoumbi**\nhttps://www.linkedin.com/in/simplice-lolo-mvoumbi-726606286/\n\n**Slimane Chelouah**\nhttp://www.linkedin.com/in/slimane-chelouah")
 
 ### Introduction ###
 
@@ -137,6 +185,7 @@ if page == pages[3]:
 
     st.write("### 1. Descriptions des produits")
     st.write("- **Gestion des valeurs nulles**")
+    fusion = get_dataframe_texte()
     st.code("fusion.isna().mean()")
     st.dataframe(fusion.isna().mean())
     st.write("On remarque un total de 29800 lignes sur 84916, soit plus de 35%, où la description est manquante. Pour éviter de les supprimer et donc de pénaliser notre jeu de donnée, nous avons décidé de fusionner les colonnes 'designation' et 'description' en une nouvelle colonne 'descriptif'.")
@@ -209,11 +258,26 @@ if page == pages[5]:
     st.code("train_datagen = ImageDataGenerator(\n    rescale=0.1,\n    zoom_range=0.1,\n    rotation_range=10,\n    width_shift_range=0.1,\n    height_shift_range=0.1,\n    horizontal_flip=True\n)\ntest_datagen = ImageDataGenerator(rescale=0.1)")
 
     st.write("#### 3. Résultats obtenus")
-    st.write("Pour des raisons de temps de calcul, nous avons choisi de ne pas afficher les scores de performance pour les modèles d'images. Vous pouvez cependant visualiser les résultats obtenus pour la fonction de perte et pour le score de performance en fonction du nombre d'époque.")
     choix_image = ['Sequential (faible augmentation des données)', 'ResNet50 (forte augmentation des données)']
     option_image = st.selectbox('Choix du modèle', choix_image)
-    model, model_name = prediction(option_image)
-    st.image(f"reports/figures/{model_name}/plot_accuracy_and_loss.png")
+    
+    display_texte = st.radio('Que souhaitez-vous montrer sur la partie texte ?', ('Scores de performance', 'Matrice de confusion', 'Fonction de perte et score de performance en fonction du nombre d\'époque'))
+
+    # get model_name
+    if option_image == 'Sequential (faible augmentation des données)':
+        model_name = 'sequential'
+    elif option_image == 'ResNet50 (forte augmentation des données)':
+        model_name = 'resnet50'
+
+    if display_texte == 'Scores de performance':
+        loss, accuracy, f1 = scores_image(model_name)
+        st.write("- Loss : ", round(loss, 4))
+        st.write("- Accuracy : ", round(accuracy, 4))
+        st.write("- F1-score : ", round(f1.mean(), 4))
+    elif display_texte == 'Fonction de perte et score de performance en fonction du nombre d\'époque':
+        st.image(f"reports/figures/{model_name}/plot_accuracy_and_loss.png")
+    elif display_texte == 'Matrice de confusion':
+        st.image(f"reports/figures/matrice_de_confusion/matrice_confusion_heatmap_{model_name}.png")
 
     st.write("#### 4. Modèle retenu")
     st.write("Le modèle Sequential avec faible augmentation de donnée a été retenu pour la classification des images avec des scores (accuracy=0.4636 et f1_score=0.3583) proches de ceux proposés par Rakuten, tout en évitant un sur-apprentissage du modèle.")

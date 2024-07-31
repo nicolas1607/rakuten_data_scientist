@@ -3,8 +3,6 @@ import sys
 import pickle
 import pandas as pd
 import streamlit as st
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
@@ -152,35 +150,47 @@ pages = [
 ]
 
 page = st.sidebar.radio("", pages)
-st.sidebar.warning("Cohorte : Bootcamp DS de mai 2024\n\n**Nicolas Mormiche**\nhttps://linkedin.com/in/mormichen\n\n**Riadh Zidi**\nhttps://linkedin.com/in/riadh\n\n**Simplice Lolo Mvoumbi**\nhttps://www.linkedin.com/in/simplice-lolo-mvoumbi-726606286/\n\n**Slimane Chelouah**\nhttp://www.linkedin.com/in/slimane-chelouah")
+st.sidebar.warning("Cohorte : Bootcamp DS de mai 2024\n\n**Nicolas Mormiche**\nhttps://linkedin.com/in/mormichen\n\n**Riadh Zidi**\nhttps://www.linkedin.com/in/riadh-zidi-493800276/\n\n**Simplice Lolo Mvoumbi**\nhttps://www.linkedin.com/in/simplice-lolo-mvoumbi-726606286/\n\n**Slimane Chelouah**\nhttp://www.linkedin.com/in/slimane-chelouah")
 
 ### Introduction ###
 
 if page == pages[0]:
+
     st.markdown("## Introduction")
+    st.image("reports/figures/challenge_data.png")
+    st.write("**Challenge Rakuten** : https://challengedata.ens.fr/participants/challenges/35/")
+    st.write("Ce projet s'inscrit dans le cadre de nos travaux de fin de formation, portant sur la classification multimodale de produits e-commerce (texte et image). Il consiste à prédire le code type des produits du catalogue de Rakuten France.")
+    st.write("Le projet utilise les données fournies par Rakuten, soient :")
+    st.write("- 84916 descriptions de produits")
+    st.write("- 84916 images")
+    st.write("- 27 catégories de produits uniques")
+    st.write("Les objectifs sont d'étudier la classification multimodale et d'améliorer les scores de référence obtenus par Rakuten qui utilise un CNN simplifié pour la partie texte et Residual Networks (ResNet) pour la partie image :")
+    st.markdown("""
+        * Classification des textes avec CNN : 0.8113
+        * Classification des images avec ResNet50 : 0,5534
+    """)
 
 ### Exploration des données ###    
 
 if page == pages[1]:
-    st.markdown("## Exploration des données")
-    visualisation_options = [
-        "Sélectionner une visualisation",
-        "Heatmap des corrélations",
-        "Histogramme avec estimation de la densité de prdtypecode",
-        "Histogramme de prdtypecode",
-        "Nuage de points entre productid et prdtypecode",
-    ]
 
-    choice = st.selectbox("Choisir une visualisation à afficher", visualisation_options)
-    if st.button('Afficher la visualisation'):
-        if choice == "Heatmap des corrélations":
-            st.image("reports/figures/heatmap.png", caption='Corrélation entre toutes les variables quantitatives')
-        elif choice == "Histogramme avec estimation de la densité de prdtypecode":
-            st.image("reports/figures/histogramme_avec_estimation_densite.png", caption='Répartition des valeurs de prdtypecode avec estimation de la densité')
-        elif choice == "Histogramme de prdtypecode":
-            st.image("reports/figures/histogramme.png", caption='Répartition des valeurs de prdtypecode')
-        elif choice == "Nuage de points entre productid et prdtypecode":
-            st.image("reports/figures/scatterplot.png", caption='Catégorie du produit en fonction du productid')
+    st.markdown("### Aperçu des données")
+    st.write("Cet aperçu présente les cinq premières lignes du DataFrame,\nmontrant des exemples de données disponibles.")
+    st.dataframe(fusion.head())
+
+    st.markdown("### Statistiques descriptives")
+    st.write("Les statistiques descriptives fournissent un résumé statistique des colonnes \nnumériques")
+    st.dataframe(fusion.describe())
+
+    st.markdown("### Valeurs uniques de 'prdtypecode'")
+    st.write("Ce nombre représente les différentes catégories de produits \nidentifiées par 'prdtypecode' : "+ str(fusion['prdtypecode'].nunique()))
+
+    st.markdown("### Vérification des doublons")
+    st.write("Le nombre de doublons indique combien de lignes sont identiques \ndans l'ensemble des données : " + str(fusion.duplicated().sum()))
+
+    st.markdown("### Vérification des valeurs nulles")
+    st.write("Le tableau suivant montre le pourcentage de valeurs manquantes par colonne, ce qui est crucial pour évaluer la qualité des données.")
+    st.dataframe(fusion.isna().mean())
 
 ### Visualisation des données ###
 
@@ -194,27 +204,15 @@ if page == pages[2]:
     # Fig1 : Heatmap : corrélation entre les variables quantitatives
     title2_text = "(Fig.1) Heatmap : corrélation entre les variables quantitatives"
     st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    fusion = fusion.drop(['description'], axis=1)
-    fusion = fusion.drop(['designation'], axis=1)
-    
-    size_x, size_y= 1, 1
-    font_size = 3
-    fig, ax = plt.subplots(figsize = (size_x, size_y))
-    sns.heatmap(fusion.corr(), ax = ax, cmap = "coolwarm", annot=True, annot_kws={"size": font_size})
-    ax.tick_params(axis='both', which='major', labelsize=font_size)
-    cbar = ax.collections[0].colorbar
-    cbar.ax.tick_params(labelsize=font_size)
-    st.write(fig)
+    st.image("reports/figures/heatmap.png")
+
     body_text = "<b>Conclusion :</b> on ne retrouve aucune corrélation intéressante entre les variables quantitatives mis à part entre productid et imageid qui ne semble pas être significatif pour le projet."
     body_text += "<br><br>"
     st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
     
     # Fig2 : Histogramme avec estimation de la densité : prdtypecode
     title2_text = "(Fig.2) Histogramme avec estimation de la densité : prdtypecode"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    fig = sns.displot(fusion.prdtypecode, bins=20, kde = True, rug=True, color="red")
-    #plt.title('Répartition des valeurs de prdtypecode avec estimation de la densité')
-    st.pyplot(fig)
+    st.image("reports/figures/histogramme.png")
     body_text = "<b>Conclusion :</b> on constate que les valeurs de codes type produit se répartissent sur 3 plages de valeurs principales (ex : entre 0 et 50, entre 1000 et 1500 et entre 2000 et 2900)."
     body_text += "<br><br>"
     st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
@@ -223,20 +221,7 @@ if page == pages[2]:
     # Fig3 : Histogramme : prdtypecode
     title2_text = "(Fig.3) Histogramme : prdtypecode"
     st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    distribution = fusion['prdtypecode'].value_counts()
-    distribution_df = distribution.reset_index()
-    distribution_df.columns = ['prdtypecode', 'count']
-
-    # Tracer le graphique à barres
-    size_x, size_y= 3, 3
-    font_size = 5
-    fig, ax = plt.subplots(figsize = (size_x, size_y))
-    distribution_df.plot(kind='bar', x='prdtypecode', y='count', ax=ax)
-    ax.set_xlabel('prdtypecode', fontsize=font_size)
-    ax.set_ylabel('Nombre d\'occurrences', fontsize=font_size)
-    ax.tick_params(axis='both', which='major', labelsize=font_size)
-    #ax.set_title('Répartition des valeurs de prdtypecode')
-    st.pyplot(fig)
+    st.image("reports/figures/histogramme_avec_estimation_densite.png")
     body_text = "<b>Conclusion :</b> étant donnée la représentation des 27 catégories de produits, ordonnées par ordre décroissant, on constate que la catégorie 2583 se détache fortement en terme de sur-représentation et que les catégories 2905, 60, 2220, 1301, 1940 et 1180 se détachent fortement en termes de sous-représentation. <b>On peut donc en déduire qu’il s’agit d’un problème de classification multiclasses sur des données déséquilibrées.</b>"
     body_text += "<br><br>"
     st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
@@ -246,10 +231,7 @@ if page == pages[2]:
     # Fig4 : Nuage de point : productid et prdtypecode
     title2_text = "(Fig.4) Nuage de point : productid et prdtypecode"
     st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    fig = plt.figure(figsize = (size_x, size_y))
-    fig = sns.relplot(x=fusion.productid, y=fusion.prdtypecode)
-    #plt.title('Catégorie du produit en fonction du productid')
-    st.pyplot(fig)
+    st.image("reports/figures/scatterplot.png")
     body_text = "<b>Conclusion :</b> on remarque que les codes type se répartissent par plage discrètes de valeurs, d’où la répartition en lignes. Dans la majorité des cas, pour chaque code type, les codes produits s’étendent sur l’ensemble de la plage des productid."
     body_text += "<br><br>"
     st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
@@ -262,8 +244,6 @@ if page == pages[3]:
 
     st.write("### 1. Descriptions des produits")
     st.write("- **Gestion des valeurs nulles**")
-    st.code("fusion.isna().mean()")
-    st.dataframe(fusion.isna().mean())
     st.write("On remarque un total de 29800 lignes sur 84916, soit plus de 35%, où la description est manquante. Pour éviter de les supprimer et donc de pénaliser notre jeu de donnée, nous avons décidé de fusionner les colonnes 'designation' et 'description' en une nouvelle colonne 'descriptif'.")
 
     st.write("- **Traitement naturel du langage (NLP)**")
@@ -432,10 +412,24 @@ if page == pages[5]:
 ### Interprétabilité ###
         
 if page == pages[6]:
-    st.write("")
+    st.write("Nous avons utilisé la librairie LIME pour interpréter les résultats du modèle LinearSVM afin de mieux comprendre comment il réalise des prédictions sur notre corpus de texte pour en déduire à quelle classe appartient un produit e-commerce.")
+    st.write("Malheureusement, LIME necessite un modèle utilisant la méthode predict_proba() pour fonctionner. Or, le modèle LinearSVM ne possède pas cette méthode. Nous avons donc transformé les données d'entrée en un tableau 2D pour LIME :")
+    st.write("Cependant, LIME requiert un modèle qui implémente la méthode predict_proba() pour fonctionner correctement. Or, le modèle LinearSVM ne dispose pas de cette méthode. Pour contourner cette limitation, nous avons transformé les données d'entrée en un tableau 2D compatible avec LIME.")
+    st.write("Voici un exemple :")
+    st.image("reports/figures/lime_example.png")
+    st.write("On remarque que l'exemple ci-dessus a de très faible probabilité pour la classe 40 mais a une probabilité de 0.84 d'appartenir à la classe 1280, représenté par le nuage de mots suivant :")
+    st.image("reports/figures/nuage_de_mot/1280.png")
+    st.write("L'interprétation des modèles de Deep Learning n'a pas été réalisée pour la partie image, mais il serait intéressant d'utiliser la librairie Grad-CAM afin de mieux comprendre leur fonctionnement.")
 
 ### Conclusion ###
             
 if page == pages[7]:
     st.markdown("## Conclusion")
-    st.write("Le projet a mis en lumière l'importance de la classification multiclasse et multimodale (texte et image) pour atteindre les objectifs du Challenge Rakuten. Le pre-processing s'est avéré crucial pour optimiser les données, réduisant ainsi le temps d’entraînement des modèles et améliorant leurs performances. Nous avons expérimenté divers modèles de Machine Learning pour le texte et de Deep Learning pour les images, optant finalement pour LinearSVM et Resnet50 en raison de leurs bonnes performances. Bien que des améliorations soient possibles, notamment dans le traitement des images et l'intégration de méthodes multimodales, les résultats obtenus fournissent une base solide pour de futurs développements et optimisations.")
+    st.write("### Synthèse")
+    st.write("Le pre-processing aura été une des parties les plus cruciales pour préparer nos données, que ce soit pour la partie texte ou image, afin qu’elles soient exploitables par nos modèles. Elle nous a également permis de réduire considérablement le temps d’entraînement de nos modèles et d’augmenter leur performance.") 
+    st.write("Nous avons expérimenté divers modèles de Machine Learning pour le texte et de Deep Learning pour les images, optant finalement pour LinearSVM et Sequential en raison de leurs bonnes performances.")    
+    st.write("La classification des produits à l'aide de leur description et de leur designation peut être assurée par le modèle LinearSVM qui permet d'obtenir plus de 80% de bonnes prédictions. En revanche, pour ce qui est des images, nos modèles ne permettent pas de classer correctement des produits avec moins de 50% de bonnes prédictions, et ceux malgré le fait qu’ils soient proches de ceux proposés par Rakuten. ")
+    st.write("### Perspectives")
+    st.write("Pour la partie texte, il serait intéressant de tester de nouveaux modèles, plus adapté au corpus de texte tel que BERT ou des réseaux de neurones de type CNN.")
+    st.write("Concernant la partie image, la partie pre-processing devrait certainement être améliorée afin de rendre le jeu de données plus exploitable pour nos modèles. Nous pourrions également mettre en place de nouveaux modèles de Deep Learning (ex : RNN, TNN ou d’autres modèles Hugging Face).")
+    st.write("Enfin, nous n’avons pas eu le temps de mettre en place la partie Multimodal Learning pour regrouper nos scores (texte et image) malgré nos recherches sur des modèles multimodaux à double encodeur ou à encodeur commun. Cette dernière partie permettrait d'associer le texte et l’image pour la prédiction des produits e-commerce de Rakuten.")

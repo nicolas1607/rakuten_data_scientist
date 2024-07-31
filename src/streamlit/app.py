@@ -145,7 +145,7 @@ pages = [
     "Pre-processing", #nicolas
     "Classification des textes", # slimane
     "Classification des images", # nicolas
-    "Interprétabilité", # simplisse
+    "Interprétation des résultats", # simplisse
     "Conclusion" # riadh
 ]
 
@@ -159,37 +159,46 @@ if page == pages[0]:
     st.markdown("## Introduction")
     st.image("reports/figures/challenge_data.png")
     st.write("**Challenge Rakuten** : https://challengedata.ens.fr/participants/challenges/35/")
+    st.write("")
+
     st.write("Ce projet s'inscrit dans le cadre de nos travaux de fin de formation, portant sur la classification multimodale de produits e-commerce (texte et image). Il consiste à prédire le code type des produits du catalogue de Rakuten France.")
-    st.write("Le projet utilise les données fournies par Rakuten, soient :")
+    st.write("")
+    st.write("Le projet utilise les données fournies par Rakuten :")
     st.write("- 84916 descriptions de produits")
     st.write("- 84916 images")
     st.write("- 27 catégories de produits uniques")
-    st.write("Les objectifs sont d'étudier la classification multimodale et d'améliorer les scores de référence obtenus par Rakuten qui utilise un CNN simplifié pour la partie texte et Residual Networks (ResNet) pour la partie image :")
-    st.markdown("""
-        * Classification des textes avec CNN : 0.8113
-        * Classification des images avec ResNet50 : 0,5534
-    """)
+    st.write("")
+    st.write("L'objectif est d'étudier la classification multimodale et d'améliorer les scores de référence obtenus par Rakuten qui utilise un CNN simplifié pour les texte et un Residual Networks (ResNet50) pour les images :")
+    st.write("- Classification des textes avec CNN : 0.8113")
+    st.write("- Classification des images avec ResNet50 : 0,5534")
 
 ### Exploration des données ###    
 
 if page == pages[1]:
 
-    st.markdown("### Aperçu des données")
-    st.write("Cet aperçu présente les cinq premières lignes du DataFrame,\nmontrant des exemples de données disponibles.")
-    st.dataframe(fusion.head())
+    st.write("## Exploration des données")
+    st.write("")
 
-    st.markdown("### Statistiques descriptives")
+    st.markdown("#### 1. Aperçu des données")
+    st.write("Voici un aperçu des premières lignes du jeu de données ainsi que les informations le concernant :")
+    st.dataframe(fusion.head())
+    st.image("reports/figures/dataframe_info.png")
+
+    st.markdown("#### 2. Statistiques descriptives")
     st.write("Les statistiques descriptives fournissent un résumé statistique des colonnes \nnumériques")
     st.dataframe(fusion.describe())
+    st.write("")
 
-    st.markdown("### Valeurs uniques de 'prdtypecode'")
-    st.write("Ce nombre représente les différentes catégories de produits \nidentifiées par 'prdtypecode' : "+ str(fusion['prdtypecode'].nunique()))
+    st.markdown("#### 3. Valeurs uniques de 'prdtypecode'")
+    st.write("On compte au total "+str(fusion['prdtypecode'].nunique())+" catégories de produits différentes, identifiées par la colonne 'prdtypecode'.")
+    st.write("")
 
-    st.markdown("### Vérification des doublons")
-    st.write("Le nombre de doublons indique combien de lignes sont identiques \ndans l'ensemble des données : " + str(fusion.duplicated().sum()))
+    st.markdown("#### 4. Vérification des doublons")
+    st.write("Le jeu de donnée ne présente aucun doublon parmi les colonnes.")
+    st.write("")
 
-    st.markdown("### Vérification des valeurs nulles")
-    st.write("Le tableau suivant montre le pourcentage de valeurs manquantes par colonne, ce qui est crucial pour évaluer la qualité des données.")
+    st.markdown("#### 5. Vérification des valeurs nulles")
+    st.write("Le tableau suivant nous permet de constater plus de 35% de valeurs nulles dans la colonne 'description' :")
     st.dataframe(fusion.isna().mean())
 
 ### Visualisation des données ###
@@ -198,62 +207,53 @@ if page == pages[2]:
     with open("src/streamlit/style.css") as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
     
-    title1_text = "Visualisation des données"
-    st.markdown(f'<h1 class="custom-title-h1">{title1_text}</h1>', unsafe_allow_html=True)
-    
-    # Fig1 : Heatmap : corrélation entre les variables quantitatives
-    title2_text = "(Fig.1) Heatmap : corrélation entre les variables quantitatives"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    st.image("reports/figures/heatmap.png")
+    st.write("## Visualisation des données")
+    st.write("")
 
-    body_text = "<b>Conclusion :</b> on ne retrouve aucune corrélation intéressante entre les variables quantitatives mis à part entre productid et imageid qui ne semble pas être significatif pour le projet."
-    body_text += "<br><br>"
-    st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
+    st.write("#### 1. Heatmap : corrélation entre les variables quantitatives")
+    st.image("reports/figures/heatmap.png")
+    st.write("**Conclusion :** on ne retrouve aucune corrélation intéressante entre les variables quantitatives mis à part entre productid et imageid qui ne semble pas être significatif pour le projet.")
+    st.write("")
     
-    # Fig2 : Histogramme avec estimation de la densité : prdtypecode
-    title2_text = "(Fig.2) Histogramme avec estimation de la densité : prdtypecode"
+    st.write("#### 2. Histogramme avec estimation de la densité : prdtypecode")
     st.image("reports/figures/histogramme.png")
-    body_text = "<b>Conclusion :</b> on constate que les valeurs de codes type produit se répartissent sur 3 plages de valeurs principales (ex : entre 0 et 50, entre 1000 et 1500 et entre 2000 et 2900)."
-    body_text += "<br><br>"
-    st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
-    
-    
-    # Fig3 : Histogramme : prdtypecode
-    title2_text = "(Fig.3) Histogramme : prdtypecode"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
+    st.write("**Conclusion :** on constate que les valeurs de codes type produit se répartissent sur 3 plages de valeurs principales (ex : entre 0 et 50, entre 1000 et 1500 et entre 2000 et 2900).")
+    st.write("")
+
+    st.write("#### 3. Histogramme : prdtypecode")
     st.image("reports/figures/histogramme_avec_estimation_densite.png")
-    body_text = "<b>Conclusion :</b> étant donnée la représentation des 27 catégories de produits, ordonnées par ordre décroissant, on constate que la catégorie 2583 se détache fortement en terme de sur-représentation et que les catégories 2905, 60, 2220, 1301, 1940 et 1180 se détachent fortement en termes de sous-représentation. <b>On peut donc en déduire qu’il s’agit d’un problème de classification multiclasses sur des données déséquilibrées.</b>"
-    body_text += "<br><br>"
-    st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
-    
-    
-    
-    # Fig4 : Nuage de point : productid et prdtypecode
-    title2_text = "(Fig.4) Nuage de point : productid et prdtypecode"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
+    st.write("**Conclusion :** étant donnée la représentation des 27 catégories de produits, ordonnées par ordre décroissant, on constate que la catégorie 2583 se détache fortement en terme de sur-représentation et que les catégories 2905, 60, 2220, 1301, 1940 et 1180 se détachent fortement en termes de sous-représentation. On peut donc en déduire qu’il s’agit d’un problème de classification multiclasses sur des données déséquilibrées.")
+    st.write("")
+
+    st.write("#### 4. Nuage de point : productid et prdtypecode")
     st.image("reports/figures/scatterplot.png")
-    body_text = "<b>Conclusion :</b> on remarque que les codes type se répartissent par plage discrètes de valeurs, d’où la répartition en lignes. Dans la majorité des cas, pour chaque code type, les codes produits s’étendent sur l’ensemble de la plage des productid."
-    body_text += "<br><br>"
-    st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
+    st.write("**Conclusion :** on remarque que les codes type se répartissent par plage discrètes de valeurs, d’où la répartition en lignes. Dans la majorité des cas, pour chaque code type, les codes produits s’étendent sur l’ensemble de la plage des productid.")
 
 ### Pre-processing ###
 
 if page == pages[3]:
     st.write("## Pre-processing")
+    st.write("")
     st.write("La partie pre-processing a été réalisée indépendamment sur un ensemble de 84916 descriptions d'un côté et 84916 images de l'autre. Ces données représentent le jeu d'entraînement fournis par Rakuten qui nous servira de dataset de base pour la modélisation.")
+    st.write("")
 
-    st.write("### 1. Descriptions des produits")
+    st.write("#### 1. Descriptions des produits")
+    st.write("")
     st.write("- **Gestion des valeurs nulles**")
     st.write("On remarque un total de 29800 lignes sur 84916, soit plus de 35%, où la description est manquante. Pour éviter de les supprimer et donc de pénaliser notre jeu de donnée, nous avons décidé de fusionner les colonnes 'designation' et 'description' en une nouvelle colonne 'descriptif'.")
+    st.write("")
 
     st.write("- **Traitement naturel du langage (NLP)**")
     st.write("Nous avons utilisé la librairie NLTK et les méthodes NLP pour nettoyer les données textuelles :")
     st.code("# Retrait des espaces excessifs\ntexte = re.sub('\s{2,}', ' ', texte)\n\n# Mettre en minuscule\ntexte = texte.lower()\n\n# Supprimer les balises HTML\ntexte = BeautifulSoup(texte, 'html.parser').get_text()\n\n# Supprimer les nombres\ntexte = re.sub('\d+', '', texte)\n\n# Supprimer les accents\ntexte = unidecode(texte)\n\n# Supprimer les caractères spéciaux\ntexte = re.sub('[^a-zA-Z]', ' ', texte)\n\n# Supprimer les stopwords et les mots de moins de 4 lettres\nstop_words = set(stopwords.words())\ntexte = ' '.join([word for word in texte.split() if word not in stop_words])\ntexte = ' '.join([word for word in texte.split() if len(word) > 3])")
+    st.write("")
     st.write("Une lemmatisation et une tokenisation ont été réalisées pour affiner l'analyse du corpus de texte :")
     st.code("# Lemmatisation\nlemmatizer = WordNetLemmatizer()\ndf['descriptif_cleaned'] = df['descriptif_cleaned'].progress_apply(lambda texte: ' '.join([lemmatizer.lemmatize(mot) for mot in texte.split()]))\n\n# Tokenisation\ndf['tokens'] = df['descriptif_cleaned'].progress_apply(word_tokenize)")
-    st.write("Ce qui nous permet d'obtenir un corpus de texte nettoyé, qui sera ensuite transformer en vecteurs numériques à l'aide de la méthode TfidfVectorizer pour les rendre exploitables par les modèles de machine learning.")   
+    st.write("")
+    st.write("On obtient ainsi un corpus de texte nettoyé, qui sera ensuite transformé en vecteurs numériques à l'aide de la méthode TfidfVectorizer pour les rendre exploitables par les modèles de machine learning.")   
     df = pd.read_csv('data//df_tokenized.csv', index_col=0)
     st.dataframe(df.head()[['descriptif', 'tokens']])
+    st.write("")
 
     st.write("- **Résultats obtenus**")
     st.write("L’étape du traitement du langage nous a permis de passer d’une liste de mots de 222906 à 137099 après nettoyage. Aussi, pour mieux comprendre la variable cible, nous avons réalisé une étude sur les mots les plus fréquents présents par catégorie. ")
@@ -261,12 +261,16 @@ if page == pages[3]:
     st.write("Nous avons utilisé la librairie langdetect pour détecter la langue de chaque description, où on retrouve des langues prédominantes tel que le français et l'anglais soit plus de 88% du corpus de texte.")
     st.image("reports/figures/lang_detect.png")
     st.write("On remarque la présence de 9 modalités où la langue n'est pas reconnue. En effet, une fois la colonne 'descriptif' prétraitée à l'aide des méthodes NLP, aucun mot n'a été retenu ce qui semble indiqué que le commerçant n'a pas renseigné de description et de désignation avec des mots suffisamment explicite.")
+    st.write("")
     st.write("Afin de mieux comprendre les codes types, nous avons réalisé des nuages de mots afin de se faire une idée plus claire sur le contenu des catégories. Voici un exemple de la classe 2583 qui est majoritaire :")
     st.image("reports/figures/nuage_de_mot/2583.png")
+    st.write("")
 
-    st.write("### 2. Images des produits")
+    st.write("#### 2. Images des produits")
+    st.write("")
     st.write("Les images ont été redimensionnées en 125x125 pixels en les passant en nuance de gris :")
     st.code("input_path = 'data/images/image_train/'\noutput_path = 'data/images/image_train_preprocessed/'\n\nimage = cv2.imread(input_path+filename, cv2.IMREAD_COLOR)\nimage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)\nimage = cv2.resize(image, (125, 125))\n\ncv2.imwrite(output_path+filename, image)\n")
+    st.write("")
     st.write("Nous avons ensuite crée un nouveau dataframe avec les chemins des images et leur label associé :")
     st.code("df = X.merge(y, left_index=True, right_index=True)\ndf['filepath'] = df.apply(lambda row: output_path + 'image_' + str(row['imageid']) + '_product_' + str(row['productid']) + '.jpg', axis=1)\ndf['prdtypecode'] = df['prdtypecode'].astype(str)\ndf = df[['filepath', 'prdtypecode']]\ndf.head()")
     df = get_dataframe_image(X_train, Y_train, 'data/images/image_train_preprocessed/')
@@ -278,88 +282,56 @@ if page == pages[4]:
     with open("src/streamlit/style.css") as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-    title1_text = "Classification des textes"
-    st.markdown(f'<h1 class="custom-title-h1">{title1_text}</h1>', unsafe_allow_html=True)
-    #st.markdown("## Classification des produits : texte")
-    
-    
-    title2_text = "Stratégies de classification"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    body_text = "Nous avons écarté les stratégies de classification OneVSRest et OneVsOne, souvent utilisées dans les problèmes multi-classe. En effet, ces stratégies ne sont pas adaptées aux grands ensembles de données."
-    body_text +="<br><br>"
-    st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
-    
-    
-    title2_text = "Optimisation des hyperparamètres"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    body_text = "Nous avons utilisé 2 approches : GridSearchCV et BayesSearchCV<br>"
-    body_text += "- <b>GridSearchCV</b> : effectue une recherche exhaustive en testant toutes les combinaisons possibles de paramètres dans les plages spécifiées.<br>"
-    body_text += "- <b>BayesSearchCV</b> : utilise l'optimisation bayésienne, qui apprend au fur et à mesure des essais pour cibler les zones prometteuses de l'espace des hyperparamètres."
-    body_text +="<br><br>"
-    st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
-    
-    
-    title2_text = "Ré-échantillonnage des données"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    body_text = "Les données étant déséquilibrées, nous avons appliqué les techniques de ré-échantillonnage suivantes :<br>"
-    body_text += "- <b>Sous-échantillonnage</b> : les méthodes RandomUnderSampler et EditedNearestNeighbour<br>"
-    body_text += "- <b>Sur-échantillonnage</b> : les méthodes SMOTE et ADASYN<br>"
-    body_text +="<br>"
-    body_text +="Dans les 2 cas, les scores obtenus restaient inférieurs à ceux obtenus sans ré-échantillonnage."
-    body_text +="<br><br>"
-    body_text += "<b>Conclusion :</b> les méthodes de ré-échantillonnages ne s'avèrent pas efficaces dans notre contexte et ne seront donc pas retenues pour l'entraînement des différents modèles."
-    body_text +="<br><br>"
-    st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
-    
-    
-    title2_text = "Application de modèles de Classification de machine learning"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
+    st.write("## Classification des textes")
+    st.write("")
+
+    st.write("#### 1. Stratégies de classification")
+    st.write("Nous avons écarté les stratégies de classification OneVSRest et OneVsOne, souvent utilisées dans les problèmes multi-classe. En effet, ces stratégies ne sont pas adaptées aux grands ensembles de données.")
+    st.write("")
+
+    st.write("#### 2. Optimisation des hyperparamètres")
+    st.write("Nous avons utilisé 2 approches : GridSearchCV et BayesSearchCV")
+    st.write("- **GridSearchCV** : effectue une recherche exhaustive en testant toutes les combinaisons possibles de paramètres dans les plages spécifiées.")
+    st.write("- **BayesSearchCV** : utilise l'optimisation bayésienne, qui apprend au fur et à mesure des essais pour cibler les zones prometteuses de l'espace des hyperparamètres.")
+    st.write("")
+
+    st.write("#### 3. Ré-échantillonnage des données")
+    st.write("Les données étant déséquilibrées, nous avons appliqué les techniques de ré-échantillonnage suivantes :")
+    st.write("- **Sous-échantillonnage** : les méthodes RandomUnderSampler et EditedNearestNeighbour")
+    st.write("- **Sur-échantillonnage** : les méthodes SMOTE et ADASYN")
+    st.write("Dans les 2 cas, les scores obtenus restaient inférieurs à ceux obtenus sans ré-échantillonnage.")
+    st.write("**Conclusion :** les méthodes de ré-échantillonnages ne s'avèrent pas efficaces dans notre contexte et ne seront donc pas retenues pour l'entraînement des différents modèles.")    
+    st.write("")
+
+    st.write("#### 4. Application des modèles de classification")
     choix_texte = ['LogisticRegression', 'MultinomialNB', 'ComplementNB', 'LinearSVC', 'SGDClassifier', 'DecisionTreeClassifier']
     option_texte = st.selectbox('Choix du modèle', choix_texte)
     display_texte = st.radio('Que souhaitez-vous montrer sur la partie texte ?', ('Scores de performance', 'Matrice de confusion'))
-   
     model, model_name = prediction(option_texte)
-    #st.write(model, model_name)
     if display_texte == 'Scores de performance':
-        #st.write(model, display_texte, X_test_texte, y_test_texte)
         accuracy, f1 = scores_texte(model, display_texte, X_test_texte, y_test_texte)
-        #body_text = "Accuracy : "+ str(accuracy)+"<br>"
-        #body_text += "F1 Score : "+ str(f1)+"<br>"
-        #st.markdown(f'<div class="custom-body-red">{body_text}</div>', unsafe_allow_html=True)
         st.write("Accuracy : ", accuracy)
         st.write("F1 Score : ", f1)
     elif display_texte == 'Matrice de confusion':
         if (model_name !='logistic_regression') : model_name+="_grid"
-        #st.write("matrice_confusion_heatmap_"+model_name+".png")
         st.image(f"reports/figures/matrice_de_confusion/matrice_confusion_heatmap_{model_name}.png")
+    st.write("")
 
-    
-    title2_text = "Algorithmes d'optimisation"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    body_text = "Sur la base des 2 meilleurs modèles (LinearSVM et SGDClassifier), nous avons utilisé les 2 algorithmes d'optimisation suivants pour améliorer les scores de nos modèles :<br>" 
-    body_text +="- AdaBoostClassifier<br>"
-    body_text +="- BaggingClassifier<br>"
-    body_text +="Dans les 2 cas, les scores obtenus restaient inférieurs à ceux obtenus sans optimisation.<br>"
-    body_text +="Nous avons aussi étudié la mise en place d'hyperparamètres sur ces algorithmes (via GridSearchCV) : les temps d'exécution se sont avérés excessivement longs."
-    body_text +="<br><br>"
-    st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
+    st.write("#### 5. Algorithmes d'optimisation")
+    st.write("Sur la base des 2 meilleurs modèles (LinearSVM et SGDClassifier), nous avons utilisé les 2 algorithmes d'optimisation suivants pour améliorer les scores de nos modèles :") 
+    st.write("- AdaBoostClassifier")
+    st.write("- BaggingClassifier")
+    st.write("Dans les 2 cas, les scores obtenus restaient inférieurs à ceux obtenus sans optimisation.")
+    st.write("Nous avons aussi tenté d'optimiser les hyperparamètres sur ces algorithmes (via GridSearchCV) : les temps d'exécution se sont avérés excessivement longs.")
+    st.write("")
 
-    #st.write("## Titre2")
-    #st.write("corps du texte.")
-
-    title2_text = "Modèle retenu"
-    st.markdown(f'<h2 class="custom-title-h2">{title2_text}</h2>', unsafe_allow_html=True)
-    body_text = "Le modèle le plus performant est LinearSVM sans ré-échantillonnage ni optimisation avec les paramètres et résultats suivants :<br>"
-    body_text +="- <b>Paramètres</b> : C=0.7399651076649312, max_iter=10000<br>"
-    #body_text +="- <b>Accuracy</b> : 0.8193, F1-score : 0.8171<br>"
+    st.write("#### 6. Modèle retenu")
+    st.write("Le modèle le plus performant est LinearSVM sans ré-échantillonnage ni optimisation avec les paramètres et résultats suivants :")
+    st.write("- **Paramètres** : C=0.7399651076649312, max_iter=10000")
     model, model_name = prediction('LinearSVC')
     accuracy, f1 = scores_texte(model, 'Scores de performance', X_test_texte, y_test_texte)
-    body_text +="- <b>Accuracy</b> : "+str(accuracy)+", <b>F1-score</b> : "+str(f1)+"<br>"
-    body_text +="<br><br>"
-    st.markdown(f'<div class="custom-body">{body_text}</div>', unsafe_allow_html=True)
-
-    #"Scores de performance"
-    #'Matrice de confusion':
+    st.write("- **Accuracy** : "+str(accuracy))
+    st.write("- **F1-score** : "+str(f1))
     st.image(f"reports/figures/matrice_de_confusion/matrice_confusion_heatmap_{model_name}.png")
 
 ### Classification des images ###
@@ -409,27 +381,35 @@ if page == pages[5]:
     st.write("#### 4. Modèle retenu")
     st.write("Le modèle Sequential avec faible augmentation de donnée a été retenu pour la classification des images avec des scores (accuracy=0.4636 et f1_score=0.3583) proches de ceux proposés par Rakuten, tout en évitant un sur-apprentissage du modèle.")
 
-### Interprétabilité ###
+### Interprétation des résultats ###
         
 if page == pages[6]:
+    st.write("## Interprétation des résultats")
+    st.write("")
+
     st.write("Nous avons utilisé la librairie LIME pour interpréter les résultats du modèle LinearSVM afin de mieux comprendre comment il réalise des prédictions sur notre corpus de texte pour en déduire à quelle classe appartient un produit e-commerce.")
-    st.write("Malheureusement, LIME necessite un modèle utilisant la méthode predict_proba() pour fonctionner. Or, le modèle LinearSVM ne possède pas cette méthode. Nous avons donc transformé les données d'entrée en un tableau 2D pour LIME :")
     st.write("Cependant, LIME requiert un modèle qui implémente la méthode predict_proba() pour fonctionner correctement. Or, le modèle LinearSVM ne dispose pas de cette méthode. Pour contourner cette limitation, nous avons transformé les données d'entrée en un tableau 2D compatible avec LIME.")
+    st.write("")
     st.write("Voici un exemple :")
     st.image("reports/figures/lime_example.png")
     st.write("On remarque que l'exemple ci-dessus a de très faible probabilité pour la classe 40 mais a une probabilité de 0.84 d'appartenir à la classe 1280, représenté par le nuage de mots suivant :")
     st.image("reports/figures/nuage_de_mot/1280.png")
+    st.write("")
     st.write("L'interprétation des modèles de Deep Learning n'a pas été réalisée pour la partie image, mais il serait intéressant d'utiliser la librairie Grad-CAM afin de mieux comprendre leur fonctionnement.")
 
 ### Conclusion ###
             
 if page == pages[7]:
     st.markdown("## Conclusion")
-    st.write("### Synthèse")
+    st.write("")
+
+    st.write("#### 1. Synthèse")
     st.write("Le pre-processing aura été une des parties les plus cruciales pour préparer nos données, que ce soit pour la partie texte ou image, afin qu’elles soient exploitables par nos modèles. Elle nous a également permis de réduire considérablement le temps d’entraînement de nos modèles et d’augmenter leur performance.") 
     st.write("Nous avons expérimenté divers modèles de Machine Learning pour le texte et de Deep Learning pour les images, optant finalement pour LinearSVM et Sequential en raison de leurs bonnes performances.")    
     st.write("La classification des produits à l'aide de leur description et de leur designation peut être assurée par le modèle LinearSVM qui permet d'obtenir plus de 80% de bonnes prédictions. En revanche, pour ce qui est des images, nos modèles ne permettent pas de classer correctement des produits avec moins de 50% de bonnes prédictions, et ceux malgré le fait qu’ils soient proches de ceux proposés par Rakuten. ")
-    st.write("### Perspectives")
-    st.write("Pour la partie texte, il serait intéressant de tester de nouveaux modèles, plus adapté au corpus de texte tel que BERT ou des réseaux de neurones de type CNN.")
+    st.write("")
+
+    st.write("#### 2. Perspectives")
+    st.write("Pour la partie texte, il serait intéressant de tester de nouveaux modèles, plus adapté au corpus de texte tel que BERT ou des réseaux de neurones de type CNN afin de comparer les performances obtenues.")
     st.write("Concernant la partie image, la partie pre-processing devrait certainement être améliorée afin de rendre le jeu de données plus exploitable pour nos modèles. Nous pourrions également mettre en place de nouveaux modèles de Deep Learning (ex : RNN, TNN ou d’autres modèles Hugging Face).")
     st.write("Enfin, nous n’avons pas eu le temps de mettre en place la partie Multimodal Learning pour regrouper nos scores (texte et image) malgré nos recherches sur des modèles multimodaux à double encodeur ou à encodeur commun. Cette dernière partie permettrait d'associer le texte et l’image pour la prédiction des produits e-commerce de Rakuten.")

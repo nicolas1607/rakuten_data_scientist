@@ -1,20 +1,27 @@
-from preprocessing import pre_processing_texte, pre_processing_image
-from train_model import *
-from bert_model import *
-from model_res_net_50 import *
+import sys
+import os
+
+# Ajouter le répertoire racine au sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
+
+from src.models.preprocessing import pre_processing_texte, pre_processing_image
+from src.models.train_model import *
+from src.models.bert_model import *
+from src.models.model_res_net_50 import *
 
 ############################################################################################################
 
 # Pre-processing des données
-X_train, X_test, y_train, y_test, vectorizer, df = pre_processing_texte(isResampling=False)
-X_train, X_test, y_train, y_test = pre_processing_image(size=125)
+# X_train, X_test, y_train, y_test, vectorizer, df = pre_processing_texte(isResampling=False)
+# X_train, X_test, y_train, y_test = pre_processing_image(size=125)
 
 # Classification des produits (texte) : modèle retenu
-linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
-interpretability(linearSVM, vectorizer, df)
+# linearSVM = modele_linear_svm(X_train, X_test, y_train, y_test, booGrid=False)
+# interpretability(linearSVM, vectorizer, df)
 
 # Classification des produits (image) : modèle retenu
-sequential = model_cnn(X_train, X_test, y_train, y_test, size=125)
+# sequential = model_cnn(X_train, X_test, y_train, y_test, size=125)
 
 ############################################################################################################
 

@@ -37,7 +37,7 @@ def prediction(classifier):
         'LogisticRegression': 'logistic_regression',
         'MultinomialNB': 'multinomialNB',
         'ComplementNB': 'complementNB',
-        'LinearSVC': 'linear_svm',
+        'LinearSVM': 'linear_svm',
         'SGDClassifier': 'sgd',
         'DecisionTreeClassifier': 'decisionTree',
         'Sequential (faible augmentation des données)': 'sequential',
@@ -179,25 +179,25 @@ if page == pages[1]:
     st.write("## Exploration des données")
     st.write("")
 
-    st.markdown("#### 1. Aperçu des données")
+    st.write("#### 1. Aperçu des données")
     st.write("Voici un aperçu des premières lignes du jeu de données ainsi que les informations le concernant :")
     st.dataframe(fusion.head())
     st.image("reports/figures/dataframe_info.png")
 
-    st.markdown("#### 2. Statistiques descriptives")
+    st.write("#### 2. Statistiques descriptives")
     st.write("Les statistiques descriptives fournissent un résumé statistique des colonnes \nnumériques")
     st.dataframe(fusion.describe())
     st.write("")
 
-    st.markdown("#### 3. Valeurs uniques de 'prdtypecode'")
+    st.markdown("#### 3. Valeurs uniques de Catégorie de produit (prdtypecode)")
     st.write("On compte au total "+str(fusion['prdtypecode'].nunique())+" catégories de produits différentes, identifiées par la colonne 'prdtypecode'.")
     st.write("")
 
-    st.markdown("#### 4. Vérification des doublons")
+    st.write("#### 4. Vérification des doublons")
     st.write("Le jeu de donnée ne présente aucun doublon parmi les colonnes.")
     st.write("")
 
-    st.markdown("#### 5. Vérification des valeurs nulles")
+    st.write("#### 5. Vérification des valeurs nulles")
     st.write("Le tableau suivant nous permet de constater plus de 35% de valeurs nulles dans la colonne 'description' :")
     st.dataframe(fusion.isna().mean())
 
@@ -210,18 +210,17 @@ if page == pages[2]:
     st.write("## Visualisation des données")
     st.write("")
 
-    st.write("#### 1. Heatmap : corrélation entre les variables quantitatives")
+    st.write("#### 1. Heatmap : corrélation entre les variables")
     st.image("reports/figures/heatmap.png")
-    st.write("**Conclusion :** on ne retrouve aucune corrélation intéressante entre les variables quantitatives mis à part entre productid et imageid qui ne semble pas être significatif pour le projet.")
+    st.write("**Conclusion :** on ne retrouve aucune corrélation intéressante entre les variables mis à part entre productid et imageid qui ne semble pas être significatif pour le projet.")
     st.write("")
-    
     st.write("#### 2. Histogramme avec estimation de la densité : prdtypecode")
-    st.image("reports/figures/histogramme.png")
+    st.image("reports/figures/histogramme_avec_estimation_densite.png")
     st.write("**Conclusion :** on constate que les valeurs de codes type produit se répartissent sur 3 plages de valeurs principales (ex : entre 0 et 50, entre 1000 et 1500 et entre 2000 et 2900).")
     st.write("")
 
     st.write("#### 3. Histogramme : prdtypecode")
-    st.image("reports/figures/histogramme_avec_estimation_densite.png")
+    st.image("reports/figures/histogramme.png")
     st.write("**Conclusion :** étant donnée la représentation des 27 catégories de produits, ordonnées par ordre décroissant, on constate que la catégorie 2583 se détache fortement en terme de sur-représentation et que les catégories 2905, 60, 2220, 1301, 1940 et 1180 se détachent fortement en termes de sous-représentation. On peut donc en déduire qu’il s’agit d’un problème de classification multiclasses sur des données déséquilibrées.")
     st.write("")
 
@@ -234,7 +233,7 @@ if page == pages[2]:
 if page == pages[3]:
     st.write("## Pre-processing")
     st.write("")
-    st.write("La partie pre-processing a été réalisée indépendamment sur un ensemble de 84916 descriptions d'un côté et 84916 images de l'autre. Ces données représentent le jeu d'entraînement fournis par Rakuten qui nous servira de dataset de base pour la modélisation.")
+    st.write("Rakuten met à disposition un jeu de données et fournit les images et les fichiers CSV pour X_train, y_train et X_test (sans les données y_test correspondantes). Nous avons donc décidé de fusionner X_train et y_train pour partir d’un jeu de données complet, composé de 84916 produits.")
     st.write("")
 
     st.write("#### 1. Descriptions des produits")
@@ -256,7 +255,7 @@ if page == pages[3]:
     st.write("")
 
     st.write("- **Résultats obtenus**")
-    st.write("L’étape du traitement du langage nous a permis de passer d’une liste de mots de 222906 à 137099 après nettoyage. Aussi, pour mieux comprendre la variable cible, nous avons réalisé une étude sur les mots les plus fréquents présents par catégorie. ")
+    st.write("L’étape du traitement du langage nous a permis de passer d’une liste de mots de 222906 à 137099 après nettoyage. On obtient alors 'descriptif' comme variable explicative et 'prdtypecode' comme variable cible. Aussi, pour mieux comprendre la variable cible, nous avons réalisé une étude sur les mots les plus fréquents présents par catégorie :")
     st.image("reports/figures/features_importance.png")
     st.write("Nous avons utilisé la librairie langdetect pour détecter la langue de chaque description, où on retrouve des langues prédominantes tel que le français et l'anglais soit plus de 88% du corpus de texte.")
     st.image("reports/figures/lang_detect.png")
@@ -271,7 +270,7 @@ if page == pages[3]:
     st.write("Les images ont été redimensionnées en 125x125 pixels en les passant en nuance de gris :")
     st.code("input_path = 'data/images/image_train/'\noutput_path = 'data/images/image_train_preprocessed/'\n\nimage = cv2.imread(input_path+filename, cv2.IMREAD_COLOR)\nimage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)\nimage = cv2.resize(image, (125, 125))\n\ncv2.imwrite(output_path+filename, image)\n")
     st.write("")
-    st.write("Nous avons ensuite crée un nouveau dataframe avec les chemins des images et leur label associé :")
+    st.write("Nous avons ensuite crée un nouveau dataframe avec les chemins des images pour variable explicative et leur label associé pour variable cible :")
     st.code("df = X.merge(y, left_index=True, right_index=True)\ndf['filepath'] = df.apply(lambda row: output_path + 'image_' + str(row['imageid']) + '_product_' + str(row['productid']) + '.jpg', axis=1)\ndf['prdtypecode'] = df['prdtypecode'].astype(str)\ndf = df[['filepath', 'prdtypecode']]\ndf.head()")
     df = get_dataframe_image(X_train, Y_train, 'data/images/image_train_preprocessed/')
     st.dataframe(df.head())
@@ -304,7 +303,7 @@ if page == pages[4]:
     st.write("")
 
     st.write("#### 4. Application des modèles de classification")
-    choix_texte = ['LogisticRegression', 'MultinomialNB', 'ComplementNB', 'LinearSVC', 'SGDClassifier', 'DecisionTreeClassifier']
+    choix_texte = ['LogisticRegression', 'MultinomialNB', 'ComplementNB', 'LinearSVM', 'SGDClassifier', 'DecisionTreeClassifier']
     option_texte = st.selectbox('Choix du modèle', choix_texte)
     display_texte = st.radio('Que souhaitez-vous montrer sur la partie texte ?', ('Scores de performance', 'Matrice de confusion'))
     model, model_name = prediction(option_texte)
@@ -328,7 +327,7 @@ if page == pages[4]:
     st.write("#### 6. Modèle retenu")
     st.write("Le modèle le plus performant est LinearSVM sans ré-échantillonnage ni optimisation avec les paramètres et résultats suivants :")
     st.write("- **Paramètres** : C=0.7399651076649312, max_iter=10000")
-    model, model_name = prediction('LinearSVC')
+    model, model_name = prediction('LinearSVM')
     accuracy, f1 = scores_texte(model, 'Scores de performance', X_test_texte, y_test_texte)
     st.write("- **Accuracy** : "+str(accuracy))
     st.write("- **F1-score** : "+str(f1))
@@ -361,7 +360,7 @@ if page == pages[5]:
     choix_image = ['Sequential (faible augmentation des données)', 'ResNet50 (forte augmentation des données)']
     option_image = st.selectbox('Choix du modèle', choix_image)
     
-    display_texte = st.radio('Que souhaitez-vous montrer sur la partie texte ?', ('Scores de performance', 'Matrice de confusion', 'Fonction de perte et score de performance en fonction du nombre d\'époque'))
+    display_texte = st.radio('Que souhaitez-vous montrer sur la partie image ?', ('Scores de performance', 'Matrice de confusion', 'Fonction de perte et score de performance en fonction du nombre d\'époque'))
 
     if option_image == 'Sequential (faible augmentation des données)':
         model_name = 'sequential'
@@ -387,10 +386,8 @@ if page == pages[6]:
     st.write("## Interprétation des résultats")
     st.write("")
 
-    st.write("Nous avons utilisé la librairie LIME pour interpréter les résultats du modèle LinearSVM afin de mieux comprendre comment il réalise des prédictions sur notre corpus de texte pour en déduire à quelle classe appartient un produit e-commerce.")
-    st.write("Cependant, LIME requiert un modèle qui implémente la méthode predict_proba() pour fonctionner correctement. Or, le modèle LinearSVM ne dispose pas de cette méthode. Pour contourner cette limitation, nous avons transformé les données d'entrée en un tableau 2D compatible avec LIME.")
+    st.write("Nous avons utilisé la librairie LIME pour interpréter les résultats du modèle LinearSVM afin de mieux comprendre comment il réalise des prédictions sur notre corpus de texte pour en déduire à quelle classe appartient un produit e-commerce. Voici un exemple :")
     st.write("")
-    st.write("Voici un exemple :")
     st.image("reports/figures/lime_example.png")
     st.write("On remarque que l'exemple ci-dessus a de très faible probabilité pour la classe 40 mais a une probabilité de 0.84 d'appartenir à la classe 1280, représenté par le nuage de mots suivant :")
     st.image("reports/figures/nuage_de_mot/1280.png")
@@ -405,7 +402,7 @@ if page == pages[7]:
 
     st.write("#### 1. Synthèse")
     st.write("Le pre-processing aura été une des parties les plus cruciales pour préparer nos données, que ce soit pour la partie texte ou image, afin qu’elles soient exploitables par nos modèles. Elle nous a également permis de réduire considérablement le temps d’entraînement de nos modèles et d’augmenter leur performance.") 
-    st.write("Nous avons expérimenté divers modèles de Machine Learning pour le texte et de Deep Learning pour les images, optant finalement pour LinearSVM et Sequential en raison de leurs bonnes performances.")    
+    st.write("Nous avons expérimenté divers modèles de Machine Learning pour le texte et de Deep Learning pour les images, retenant finalement les modèles LinearSVM et Sequential en raison de leurs performances.")    
     st.write("La classification des produits à l'aide de leur description et de leur designation peut être assurée par le modèle LinearSVM qui permet d'obtenir plus de 80% de bonnes prédictions. En revanche, pour ce qui est des images, nos modèles ne permettent pas de classer correctement des produits avec moins de 50% de bonnes prédictions, et ceux malgré le fait qu’ils soient proches de ceux proposés par Rakuten. ")
     st.write("")
 

@@ -160,7 +160,6 @@ if page == pages[0]:
     st.image("reports/figures/challenge_data.png")
     st.write("**Challenge Rakuten** : https://challengedata.ens.fr/participants/challenges/35/")
     st.write("")
-
     st.write("Ce projet s'inscrit dans le cadre de nos travaux de fin de formation, portant sur la classification multimodale de produits e-commerce (texte et image). Il consiste à prédire le code type des produits du catalogue de Rakuten France.")
     st.write("")
     st.write("Le projet utilise les données fournies par Rakuten :")
@@ -172,7 +171,7 @@ if page == pages[0]:
     st.write("- Classification des textes avec CNN : 0.8113")
     st.write("- Classification des images avec ResNet50 : 0,5534")
     st.write("")
-    st.write("Voici la représentation d'un produit e-commerce Rakuten :")
+    st.write("Voici un exemple de représentation de produit e-commerce Rakuten :")
     st.write("- Catégorie de produit : " + str(fusion['prdtypecode'][7]))
     st.write("- Description : " + fusion['designation'][7])
     st.write("- Image :")

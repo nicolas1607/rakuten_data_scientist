@@ -10,7 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
-from language_labels import language_labels
+from src.models.language_labels import language_labels
 from langdetect import detect, lang_detect_exception, DetectorFactory
 from bs4 import BeautifulSoup
 from collections import Counter

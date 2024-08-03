@@ -182,11 +182,12 @@ if page == pages[0]:
 if page == pages[1]:
 
     st.write("## Exploration des données")
-    st.write("")
 
     st.write("#### 1. Aperçu des données")
+    st.write("")
     st.write("Voici un aperçu des premières lignes du jeu de données ainsi que les informations le concernant :")
     st.dataframe(fusion.head())
+    st.write("Il faut savoir que la désignation d'un produit doit obligatoirement être renseignées par le commerçant lorsqu'il saisit un nouveau produit, contrairement à la description qui est facultative.")
     st.image("reports/figures/dataframe_info.png")
 
     st.write("#### 2. Statistiques descriptives")
@@ -226,7 +227,7 @@ if page == pages[2]:
 
     st.write("#### 3. Histogramme : prdtypecode")
     st.image("reports/figures/histogramme.png")
-    st.write("**Conclusion :** étant donnée la représentation des 27 catégories de produits, ordonnées par ordre décroissant, on constate que la catégorie 2583 se détache fortement en terme de sur-représentation et que les catégories 2905, 60, 2220, 1301, 1940 et 1180 se détachent fortement en termes de sous-représentation. On peut donc en déduire qu’il s’agit d’un problème de classification multiclasses sur des données déséquilibrées.")
+    st.write("**Conclusion :** étant donnée la représentation des 27 catégories de produits, ordonnées par ordre décroissant, on constate que la catégorie 2583 se détache fortement en terme de sur-représentation et que les catégories 2905, 60, 2220, 1301, 1940 et 1180 se détachent fortement en termes de sous-représentation. On peut donc en déduire qu’il s’agit d’un problème de classification multiclasses sur des données déséquilibrées, sur lequel on s'intéressera donc principalement au f1-score.")
     st.write("")
 
     st.write("#### 4. Nuage de point : productid et prdtypecode")

@@ -185,9 +185,16 @@ if page == pages[1]:
 
     st.write("#### 1. Aperçu des données")
     st.write("")
-    st.write("Voici un aperçu des premières lignes du jeu de données ainsi que les informations le concernant :")
+    st.write("Voici un aperçu des premières lignes du jeu de données :")
     st.dataframe(fusion.head())
-    st.write("Il faut savoir que la désignation d'un produit doit obligatoirement être renseignées par le commerçant lorsqu'il saisit un nouveau produit, contrairement à la description qui est facultative.")
+    st.write("")
+    st.write("On remarque donc 5 colonnes avec :")
+    st.write("- designation : titre du produit, court texte résumant le produit")
+    st.write("- description : texte plus détaillé décrivant le produit (falcultatif)")
+    st.write("- productid : identifiant unique pour le produit")
+    st.write("- imageid : identifiant unique pour l’image associée au produit")
+    st.write("- prdtypecode : code type du produit")
+    st.write("")
     st.image("reports/figures/dataframe_info.png")
 
     st.write("#### 2. Statistiques descriptives")

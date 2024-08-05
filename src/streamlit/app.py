@@ -291,17 +291,13 @@ if page == pages[4]:
     st.write("## Classification des textes")
     st.write("")
 
-    st.write("#### 1. Stratégies de classification")
-    st.write("Nous avons écarté les stratégies de classification OneVSRest et OneVsOne, souvent utilisées dans les problèmes multi-classe. En effet, ces stratégies ne sont pas adaptées aux grands ensembles de données.")
-    st.write("")
-
-    st.write("#### 2. Optimisation des hyperparamètres")
+    st.write("#### 1. Optimisation des hyperparamètres")
     st.write("Nous avons utilisé 2 approches : GridSearchCV et BayesSearchCV")
     st.write("- **GridSearchCV** : effectue une recherche exhaustive en testant toutes les combinaisons possibles de paramètres dans les plages spécifiées.")
     st.write("- **BayesSearchCV** : utilise l'optimisation bayésienne, qui apprend au fur et à mesure des essais pour cibler les zones prometteuses de l'espace des hyperparamètres.")
     st.write("")
 
-    st.write("#### 3. Ré-échantillonnage des données")
+    st.write("#### 2. Ré-échantillonnage des données")
     st.write("Les données étant déséquilibrées, nous avons appliqué les techniques de ré-échantillonnage suivantes :")
     st.write("- **Sous-échantillonnage** : les méthodes RandomUnderSampler et EditedNearestNeighbour")
     st.write("- **Sur-échantillonnage** : les méthodes SMOTE et ADASYN")
@@ -309,7 +305,7 @@ if page == pages[4]:
     st.write("**Conclusion :** les méthodes de ré-échantillonnages ne s'avèrent pas efficaces dans notre contexte et ne seront donc pas retenues pour l'entraînement des différents modèles.")    
     st.write("")
 
-    st.write("#### 4. Application des modèles de classification")
+    st.write("#### 3. Application des modèles de classification")
     choix_texte = ['LogisticRegression', 'MultinomialNB', 'ComplementNB', 'LinearSVM', 'SGDClassifier', 'DecisionTreeClassifier']
     option_texte = st.selectbox('Choix du modèle', choix_texte)
     display_texte = st.radio('Que souhaitez-vous montrer sur la partie texte ?', ('Scores de performance', 'Matrice de confusion'))
@@ -323,7 +319,7 @@ if page == pages[4]:
         st.image(f"reports/figures/matrice_de_confusion/matrice_confusion_heatmap_{model_name}.png")
     st.write("")
 
-    st.write("#### 5. Algorithmes d'optimisation")
+    st.write("#### 4. Algorithmes d'optimisation")
     st.write("Sur la base des 2 meilleurs modèles (LinearSVM et SGDClassifier), nous avons utilisé les 2 algorithmes d'optimisation suivants pour améliorer les scores de nos modèles :") 
     st.write("- AdaBoostClassifier")
     st.write("- BaggingClassifier")
@@ -331,7 +327,7 @@ if page == pages[4]:
     st.write("Nous avons aussi tenté d'optimiser les hyperparamètres sur ces algorithmes (via GridSearchCV) : les temps d'exécution se sont avérés excessivement longs.")
     st.write("")
 
-    st.write("#### 6. Modèle retenu")
+    st.write("#### 5. Modèle retenu")
     st.write("Le modèle le plus performant est LinearSVM sans ré-échantillonnage ni optimisation avec les paramètres et résultats suivants :")
     st.write("- **Paramètres** : C=0.7399651076649312, max_iter=10000")
     model, model_name = prediction('LinearSVM')
